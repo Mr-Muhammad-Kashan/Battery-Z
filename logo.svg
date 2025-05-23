@@ -1,0 +1,57 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Glow for battery outline and text -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Glow for plant-style shapes -->
+    <filter id="plantGlow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="black" rx="20" />
+
+  <!-- Glowing leaves and tendrils (symbolizing healing energy) -->
+  <g filter="url(#plantGlow)" fill="#00FF66" fill-opacity="0.4">
+    <!-- Left leaf -->
+    <path d="M140 160 Q100 256 140 352 Q110 300 120 256 Q110 210 140 160 Z" />
+    <!-- Right leaf -->
+    <path d="M372 160 Q412 256 372 352 Q402 300 392 256 Q402 210 372 160 Z" />
+    
+    <!-- Tendrils -->
+    <path d="M130 140 C80 220, 80 290, 130 370" stroke="#00FF66" stroke-width="3" fill="none" stroke-opacity="0.3"/>
+    <path d="M382 140 C432 220, 432 290, 382 370" stroke="#00FF66" stroke-width="3" fill="none" stroke-opacity="0.3"/>
+  </g>
+
+  <!-- Glowing battery outline -->
+  <g filter="url(#glow)">
+    <rect x="156" y="106" width="200" height="300" rx="20" ry="20" stroke="#00FF66" stroke-width="6" fill="none"/>
+  </g>
+
+  <!-- Battery tip -->
+  <rect x="226" y="80" width="60" height="20" rx="4" fill="#00FF66"/>
+
+  <!-- Battery body -->
+  <rect x="156" y="106" width="200" height="300" rx="20" ry="20" stroke="#00FF66" stroke-width="3" fill="none"/>
+
+  <!-- Battery cells -->
+  <rect x="176" y="126" width="160" height="80" rx="10" fill="#00FF66"/>
+  <rect x="176" y="216" width="160" height="80" rx="10" fill="#00FF66"/>
+  <rect x="176" y="306" width="160" height="80" rx="10" fill="#00FF66"/>
+
+  <!-- Battery-Z label -->
+  <text x="256" y="440" font-size="28" fill="#00FF66" text-anchor="middle" font-family="Arial, sans-serif" filter="url(#glow)">
+    Battery-Z
+  </text>
+</svg>

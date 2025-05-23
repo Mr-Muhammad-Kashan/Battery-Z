@@ -1,0 +1,247 @@
+# Battery-Z Requirements File
+# Version: 1.0
+# Created by: Muhammad Kashan Tariq
+# Last Updated: May 23, 2025
+#
+# This requirements.txt file lists all dependencies required for the Battery-Z project, a sophisticated
+# battery monitoring and optimization tool for Windows laptops. It includes core libraries, optional
+# enhancements, development tools, and packaging utilities to ensure a robust, scalable, and maintainable
+# application. Each dependency is accompanied by a detailed explanation, version constraints for
+# compatibility, and step-by-step guidance for installation and usage.
+#
+# === Table of Contents ===
+# 1. Core Dependencies: Essential libraries for Battery-Z's functionality.
+# 2. Optional Enhancements: Libraries for advanced features and compatibility.
+# 3. Development Tools: Tools for testing, linting, and code quality.
+# 4. Packaging Utilities: Tools for building and distributing Battery-Z.
+# 5. Installation Guide: Step-by-step instructions for setting up the environment.
+# 6. Troubleshooting: Common issues and solutions.
+#
+# === Installation Instructions ===
+# To install all dependencies, follow these steps:
+# 1. Ensure Python 3.8+ is installed (download from https://www.python.org/downloads/).
+# 2. Create a virtual environment to isolate dependencies:
+#    ```bash
+#    python -m venv venv
+#    source venv/bin/activate  # On Windows: venv\Scripts\activate
+#    ```
+# 3. Install dependencies using pip:
+#    ```bash
+#    pip install -r requirements.txt
+#    ```
+# 4. Verify installation:
+#    ```bash
+#    python -c "import PyQt5, psutil, wmi, pandas, matplotlib, beautifulsoup4"
+#    ```
+#    No errors indicate successful installation.
+# 5. Run Battery-Z:
+#    ```bash
+#    python battery_z.py
+#    ```
+#
+# Note: Some features (e.g., ACPI queries) require administrative privileges. Run the application
+# as an administrator for full functionality.
+#
+# === Core Dependencies ===
+# These libraries are essential for Battery-Z's core functionality, including GUI, battery monitoring,
+# data processing, and system interactions.
+
+# PyQt5: Cross-platform GUI framework for building Battery-Z's user interface.
+# Used for QMainWindow, QWidget, QSystemTrayIcon, animations, and more.
+# Version 5.15.10 ensures stability and compatibility with Python 3.8+.
+PyQt5==5.15.10
+# Installation note: Requires ~200 MB. Install first to avoid conflicts with other Qt-based libraries.
+# Troubleshooting: If import errors occur, try `pip install PyQt5 --force-reinstall`.
+
+# psutil: Cross-platform library for retrieving system information, including battery status.
+# Used for real-time battery percentage, charging state, and time remaining.
+# Version 5.9.8 is stable and supports Windows battery sensors.
+psutil==5.9.8
+# Installation note: Requires C compiler for some platforms. On Windows, precompiled binaries are used.
+# Troubleshooting: If `psutil` fails to detect battery, ensure laptop has a supported battery and drivers.
+
+# wmi: Windows Management Instrumentation library for accessing system and battery data.
+# Used for Win32_Battery, BatteryCycleCount, and system model queries.
+# Version 1.5.1 is lightweight and compatible with Python 3.8+.
+wmi==1.5.1
+# Installation note: Requires Windows OS. No additional setup needed for most systems.
+# Troubleshooting: If WMI queries fail, check Windows Management Instrumentation service is running.
+
+# beautifulsoup4: HTML/XML parsing library for processing Powercfg battery reports.
+# Used to extract battery details from HTML reports as a fallback.
+# Version 4.12.3 supports robust parsing and is actively maintained.
+beautifulsoup4==4.12.3
+# Installation note: Installs `soupsieve` as a dependency for CSS selector support.
+# Troubleshooting: Ensure Powercfg reports are generated correctly (`powercfg /batteryreport`).
+
+# pandas: Data analysis library for handling battery history and charge logs.
+# Used for CSV processing and data manipulation in HistoryDialog.
+# Version 2.2.2 supports efficient data handling and is compatible with matplotlib.
+pandas==2.2.2
+# Installation note: Requires NumPy (~50 MB). Installs automatically.
+# Troubleshooting: If memory errors occur, reduce CSV file size or use 64-bit Python.
+
+# matplotlib: Plotting library for visualizing battery percentage history.
+# Used in HistoryDialog for interactive graphs.
+# Version 3.8.4 integrates with PyQt5 and supports Qt5Agg backend.
+matplotlib==3.8.4
+# Installation note: Requires ~100 MB. Ensure `PyQt5` is installed first for Qt backend.
+# Troubleshooting: If plots don’t display, verify `Qt5Agg` backend in matplotlib configuration.
+
+# python-win32: Windows-specific library for low-level system interactions.
+# Used for win32api and win32con to enumerate battery devices.
+# Version 306 is stable and supports Windows 10/11.
+pywin32==306
+# Installation note: Requires Windows OS. Installs multiple Windows API modules.
+# Troubleshooting: If import errors occur, reinstall with `pip install pywin32 --force-reinstall`.
+
+#
+# === Optional Enhancements ===
+# These libraries enhance Battery-Z's functionality, improve compatibility, or support future features.
+# They are not strictly required but recommended for a complete experience.
+
+# numpy: Numerical computing library for advanced data processing.
+# Enhances pandas and matplotlib performance for large datasets.
+# Version 1.26.4 is compatible with pandas 2.2.2 and Python 3.8+.
+numpy==1.26.4
+# Installation note: Requires ~80 MB. Installs C-based extensions for performance.
+# Troubleshooting: If installation fails, ensure a compatible C compiler is available.
+
+# lxml: Fast XML/HTML parsing library as an alternative to BeautifulSoup.
+# Can be used for parsing Powercfg XML reports with better performance.
+# Version 5.2.1 is stable and supports Windows.
+lxml==5.2.1
+# Installation note: Requires libxml2/libxslt. Precompiled binaries available for Windows.
+# Troubleshooting: If parsing errors occur, fall back to beautifulsoup4.
+
+# requests: HTTP library for potential future features (e.g., fetching battery specs online).
+# Not currently used but included for extensibility.
+# Version 2.32.3 is widely used and secure.
+requests==2.32.3
+# Installation note: Lightweight (~200 KB). Installs urllib3, certifi, and charset-normalizer.
+# Troubleshooting: Ensure internet connectivity for installation.
+
+# pyinstaller: Packaging tool for creating standalone executables.
+# Used to bundle Battery-Z into a single .exe file for distribution.
+# Version 6.6.0 supports Python 3.8+ and Windows.
+pyinstaller==6.6.0
+# Installation note: Requires ~50 MB. Install only if building executables.
+# Usage: `pyinstaller --onefile --icon=logo.ico battery_z.py`
+# Troubleshooting: If executable fails, ensure all dependencies are included in PyInstaller spec.
+
+# pyqt5-tools: Development tools for PyQt5, including Qt Designer.
+# Useful for designing and debugging UI layouts.
+# Version 5.15.10.1 matches PyQt5 version for compatibility.
+pyqt5-tools==5.15.10.1
+# Installation note: Optional for developers. Includes designer.exe for UI prototyping.
+# Troubleshooting: If designer crashes, verify PyQt5 installation.
+
+# pywin32-ctypes: Alternative to pywin32 for specific Windows API calls.
+# Provides lightweight access to ctypes-based Windows APIs.
+# Version 0.2.2 is minimal and compatible with pywin32.
+pywin32-ctypes==0.2.2
+# Installation note: Lightweight (~100 KB). Install as a fallback for pywin32.
+# Troubleshooting: Use if pywin32 installation fails on restricted systems.
+
+#
+# === Development Tools ===
+# These tools ensure code quality, testing, and maintainability during development.
+
+# flake8: Linting tool for enforcing PEP 8 style guidelines.
+# Used to maintain clean, readable code.
+# Version 7.0.0 supports Python 3.8+ and integrates with CI pipelines.
+flake8==7.0.0
+# Installation note: Lightweight (~300 KB). Run `flake8 .` to check code.
+# Troubleshooting: Configure .flake8 file to customize rules if needed.
+
+# pytest: Testing framework for writing and running unit tests.
+# Recommended for testing BatteryIntelligence and UI components.
+# Version 8.2.0 is feature-rich and supports Python 3.8+.
+pytest==8.2.0
+# Installation note: Requires ~1 MB. Create tests in `tests/` directory.
+# Usage: `pytest tests/`
+# Troubleshooting: Ensure test files follow `test_*.py` naming convention.
+
+# coverage: Code coverage tool to measure test effectiveness.
+# Used with pytest to ensure critical Battery-Z components are tested.
+# Version 7.5.1 integrates with pytest and generates HTML reports.
+coverage==7.5.1
+# Installation note: Lightweight (~200 KB). Run `coverage run -m pytest && coverage html`.
+# Troubleshooting: Check .coveragerc for configuration if coverage reports are incomplete.
+
+# black: Code formatter for consistent code style.
+# Ensures Battery-Z codebase remains uniform and readable.
+# Version 24.4.2 supports Python 3.8+ and integrates with IDEs.
+black==24.4.2
+# Installation note: Lightweight (~500 KB). Run `black .` to format code.
+# Troubleshooting: Configure pyproject.toml for custom line length if needed.
+
+# isort: Import sorting tool to organize import statements.
+# Keeps Battery-Z imports clean and consistent.
+# Version 5.13.2 supports Python 3.8+ and integrates with black.
+isort==5.13.2
+# Installation note: Lightweight (~200 KB). Run `isort .` to sort imports.
+# Troubleshooting: Use with black via `isort --profile black .`.
+
+#
+# === Packaging Utilities ===
+# Additional tools for building, distributing, and maintaining Battery-Z.
+
+# setuptools: Package building tool for creating distributable Python packages.
+# Used for creating source distributions or wheels.
+# Version 69.5.1 is stable and supports Python 3.8+.
+setuptools==69.5.1
+# Installation note: Lightweight (~1 MB). Included in most Python installations.
+# Usage: `python setup.py sdist bdist_wheel`
+# Troubleshooting: Ensure setup.py is configured correctly.
+
+# wheel: Wheel file format support for faster package installation.
+# Used with setuptools for building wheel distributions.
+# Version 0.43.0 is compatible with setuptools 69.5.1.
+wheel==0.43.0
+# Installation note: Lightweight (~100 KB). Run `pip install wheel` if missing.
+# Troubleshooting: Use `pip install --no-binary :all: wheel` if binary issues occur.
+
+# twine: Utility for uploading packages to PyPI.
+# Useful for publishing Battery-Z as a pip-installable package.
+# Version 5.0.0 supports secure uploads and Python 3.8+.
+twine==5.0.0
+# Installation note: Lightweight (~200 KB). Run `twine upload dist/*` to publish.
+# Troubleshooting: Ensure PyPI credentials are set in ~/.pypirc.
+
+#
+# === Additional Notes ===
+# - Version Constraints: Specific versions are pinned to ensure compatibility and stability.
+#   Update versions cautiously, testing thoroughly with `pytest`.
+# - Dependency Conflicts: If conflicts arise, use `pipdeptree` to inspect dependency tree:
+#   ```bash
+#   pip install pipdeptree
+#   pipdeptree
+#   ```
+# - Virtual Environment: Always use a virtual environment to avoid system-wide conflicts.
+# - Windows Compatibility: All libraries are tested for Windows 10/11, as Battery-Z is Windows-specific.
+# - Future Extensions: Libraries like `requests` and `lxml` are included for potential features
+#   (e.g., online battery database integration).
+#
+# === Troubleshooting ===
+# - **pip install fails**: Ensure internet connectivity and try `pip install --no-cache-dir -r requirements.txt`.
+# - **PyQt5 import errors**: Reinstall with `pip install PyQt5==5.15.10 --force-reinstall`.
+# - **psutil battery detection fails**: Update laptop drivers or check battery hardware.
+# - **WMI errors**: Run `winmgmt /resetrepository` in an admin Command Prompt.
+# - **matplotlib Qt backend issues**: Set backend explicitly:
+#   ```python
+#   import matplotlib
+#   matplotlib.use('Qt5Agg')
+#   ```
+# - **PyInstaller executable issues**: Add hidden imports in spec file:
+#   ```spec
+#   hiddenimports=['PyQt5.QtWidgets', 'psutil', 'wmi', 'pandas', 'matplotlib']
+#   ```
+#
+# === Contributing ===
+# Want to enhance Battery-Z? Fork the repository, install dependencies, and submit a pull request!
+# Ensure code passes `flake8`, `black`, and `isort` checks, and include tests with `pytest`.
+# See CONTRIBUTING.md for guidelines.
+#
+# Made with ❤️ by Muhammad Kashan Tariq
+# Happy coding, and keep your battery thriving! 🔋
