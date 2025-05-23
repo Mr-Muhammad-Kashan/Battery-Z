@@ -158,7 +158,3 @@ Want to show some love? [Buy me a coffee ☕](https://linktr.ee/its_Muhammad_Kas
 ---
 
 **Battery-Z: Powering your laptop with insights and care. Let’s keep your battery thriving!** 🔋✨
-
----
-
-This Markdown description is designed to be eye-catching, professional, and comprehensive, leaving room at the top for your screenshot. You can copy and paste it directly into your GitHub repository’s README.md file. Please provide the screenshot (or its path) to include it, or let me know if you need further tweaks or additions to the description! 🚀 Let me know how else I can assist with your open-source journey! 😊
