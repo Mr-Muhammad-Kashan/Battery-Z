@@ -161,4 +161,4 @@ Want to show some love? [Buy me a coffee ☕](https://linktr.ee/its_Muhammad_Kas
 
 ---
 
-**Battery-Z: Powering your laptop with insights and care. Let’s keep your battery thriving!** 🔋✨
+**Battery-Z: Powering your laptop with insights and care. Let’s keep your battery thriving!** ![image](https://github.com/Mr-Muhammad-Kashan/Battery-Z/blob/main/logo.ico)✨
