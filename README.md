@@ -1,4 +1,4 @@
-# Battery-Z 🔋
+# Battery-Z ![image](https://github.com/Mr-Muhammad-Kashan/Battery-Z/blob/main/logo.ico)
 
 ![image](https://github.com/user-attachments/assets/1078d85f-667a-492f-bb17-3b595c37a30d)
  <!-- Placeholder for your screenshot -->
