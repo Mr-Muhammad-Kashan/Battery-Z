@@ -1517,7 +1517,7 @@ class BatteryZ(QMainWindow):
         super().__init__()
         self.setWindowTitle("Battery-Z: Your Battery’s Best Friend [v1.0]")
         self.resize(1400, 900)
-        self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint)
+        self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon(resource_path("logo.ico")))
         self.current_theme = "Dark"
         self.appdata_path = appdata_path
@@ -3004,7 +3004,7 @@ class BatteryZ(QMainWindow):
         tray_menu = QMenu()
         
         open_action = QAction("Open", self)
-        open_action.triggered.connect(self.show)
+        open_action.triggered.connect(self.showNormal)
         tray_menu.addAction(open_action)
         
         refresh_action = QAction("Refresh", self)
@@ -3012,11 +3012,40 @@ class BatteryZ(QMainWindow):
         tray_menu.addAction(refresh_action)
         
         exit_action = QAction("Exit", self)
-        exit_action.triggered.connect(self.close)
+        exit_action.triggered.connect(QApplication.quit)
         tray_menu.addAction(exit_action)
         
         self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.show()
+        
+    def tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.showNormal()
+            
+    def changeEvent(self, event):
+        if event.type() == QtCore.QEvent.WindowStateChange:
+            if self.windowState() & QtCore.Qt.WindowMinimized:
+                self.hide()
+        super().changeEvent(event)
+        
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+
+    def restore_window(self):
+        self.show()
+        self.setWindowState(Qt.WindowActive)
+        self.activateWindow()
+        
+    def changeEvent(self, event):
+        if event.type() == QtCore.QEvent.WindowStateChange:
+            if self.windowState() & Qt.WindowMinimized:
+                event.accept()
+                self.hide()
+                self.tray_icon.show()
+                return
+        super().changeEvent(event)
 
 
 # Constants
