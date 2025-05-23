@@ -80,6 +80,10 @@ Battery-Z is built with a modular architecture, ensuring maintainability and sca
 
 ## 📦 Installation
 
+### Method 1: 
+ ---- > Just download and open the .EXE File from Github.
+
+### Method 2 [ Manual ]:
 Get Battery-Z up and running in just a few steps:
 
 1. **Clone the Repository**:
