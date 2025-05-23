@@ -1,6 +1,6 @@
 # Battery-Z 🔋
 
-![image](https://github.com/user-attachments/assets/6947981d-3e76-4b42-8940-e34862de24d4)
+![image](https://github.com/user-attachments/assets/1078d85f-667a-492f-bb17-3b595c37a30d)
  <!-- Placeholder for your screenshot -->
 
 **Battery-Z: Your Laptop’s Battery Companion, Built with Precision and Care**  
