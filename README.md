@@ -137,13 +137,6 @@ Battery-Z is an open-source project, and we welcome contributions from the commu
 3. Submit a pull request with a clear description of your changes and their purpose.
 4. Follow the [Code of Conduct](CODE_OF_CONDUCT.md) to maintain a respectful and inclusive community. 🤝
 
----
-
-## 📜 License
-
-Battery-Z is released under the [MIT License](LICENSE). Feel free to use, modify, and distribute it as you see fit! 🗳️
-
----
 
 ## 🙌 Acknowledgments
 
