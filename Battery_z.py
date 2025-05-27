@@ -873,13 +873,13 @@ class BatteryIntelligence:
 # Define a list of battery optimization tips to provide users with actionable advice for extending battery life and improving performance.
 TIPS = [
     # Tip 1: Advise against fully discharging the battery to prevent excessive wear and stress on battery cells.
-    "Avoid fully discharging your battery—it’s like overworking it!",
+    "Avoid fully discharging your battery—it's like overworking it!",
     # Tip 2: Recommend maintaining a cool operating environment to minimize heat-related battery degradation.
-    "Keep your laptop cool; heat is a battery’s worst enemy.",
+    "Keep your laptop cool; heat is a battery's worst enemy.",
     # Tip 3: Suggest using battery saver mode during light usage to reduce power consumption and cycle count.
-    "Use battery saver mode when you’re just chilling—it saves cycles.",
+    "Use battery saver mode when you're just chilling—it saves cycles.",
     # Tip 4: Advise disconnecting unused USB devices to prevent unnecessary power drain from peripherals.
-    "Unplug USB stuff you’re not using; they sneakily drain power.",
+    "Unplug USB stuff you're not using; they sneakily drain power.",
     # Tip 5: Recommend keeping drivers updated to optimize power management and battery performance.
     "Update your drivers—think of it as a tune-up for your battery.",
     # Tip 6: Suggest charging within the 20–80% range to minimize stress on lithium-ion batteries and extend lifespan.
@@ -897,15 +897,15 @@ TIPS = [
 # Define a list of greeting phrases to personalize the user interface, incorporating the username for a friendly experience.
 GREETING_PHRASES = [
     # Greeting 1: A casual greeting with the username, prompting the user to check battery status.
-    "Hey {username}, how’s it going? Let’s check your battery!",
+    "Hey {username}, how's it going? Let's check your battery!",
     # Greeting 2: A friendly greeting with the username, offering to examine battery health.
     "Hi {username}, good to see you! Time for a battery peek?",
     # Greeting 3: A polite greeting with the username, suggesting a review of battery health.
-    "Hello {username}, hope you’re good! Let’s see your battery health.",
+    "Hello {username}, hope you're good! Let's see your battery health.",
     # Greeting 4: A formal greeting with the username, encouraging a battery status check.
-    "Greetings {username}, let’s check how your battery’s doing today!",
+    "Greetings {username}, let's check how your battery's doing today!",
     # Greeting 5: A welcoming greeting for returning users, prompting attention to battery status.
-    "Hey {username}, back again? Let’s give your battery some attention!",
+    "Hey {username}, back again? Let's give your battery some attention!",
 ]
 
 # Define a dictionary of UI themes (Dark and Light) with color settings for various UI elements to ensure a consistent and visually appealing interface.
@@ -1179,7 +1179,7 @@ class CycleCalibrationDialog(QDialog):
 
         # Instructions
         instructions_label = QLabel(
-            "We couldn’t accurately detect your battery’s cycle count. "
+            "We couldn't accurately detect your battery's cycle count. "
             "Please enter an approximate number of cycles based on your usage "
             "(e.g., one cycle = one full charge from 0% to 100%)."
         )
@@ -1440,7 +1440,7 @@ class SplashScreen(QSplashScreen):
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
         
-        tagline_label = QLabel("Your Battery’s Best Friend")
+        tagline_label = QLabel("Your Battery's Best Friend")
         tagline_label.setFont(QFont("Arial", 12))
         tagline_label.setStyleSheet("color: #e0e0e0;")
         tagline_label.setAlignment(Qt.AlignCenter)
@@ -1515,7 +1515,7 @@ class SYSTEM_POWER_STATUS(ctypes.Structure):
 class BatteryZ(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Battery-Z: Your Battery’s Best Friend [v1.0]")
+        self.setWindowTitle("Battery-Z: Your Battery's Best Friend [v1.0]")
         self.resize(1400, 900)
         self.setWindowFlags(Qt.Window | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint)
         self.setWindowIcon(QIcon(resource_path("logo.ico")))
@@ -1834,7 +1834,7 @@ class BatteryZ(QMainWindow):
         right_layout.addWidget(self.power_label)
 
         right_layout.addWidget(self.create_header("Your Battery Summary", THEMES[self.current_theme]))
-        self.summary_label = QLabel("Hang tight, I’m checking your battery with love...")
+        self.summary_label = QLabel("Hang tight, I'm checking your battery with love...")
         self.summary_label.setWordWrap(True)
         self.summary_label.setFont(QFont("Arial", 12))  # Slightly larger font for readability
         right_layout.addWidget(self.summary_label)
@@ -1915,13 +1915,59 @@ class BatteryZ(QMainWindow):
                 QMessageBox.information(self, "Calibration Saved", "Cycle count updated successfully!")
 
     def setup_timer(self):
+        # Main update timer for battery info
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_data)
-        self.timer.start(15000)  # Increased for older hardware
+        self.normal_update_interval = 60000  # 60 seconds
+        self.tray_update_interval = 300000   # 5 minutes
+        self.timer.start(self.normal_update_interval)
 
+        # Charge log timer (unchanged)
         self.charge_timer = QTimer(self)
         self.charge_timer.timeout.connect(self.log_charge_event)
         self.charge_timer.start(60000) # Log every minute
+
+        # Track if we are in tray/minimized mode
+        self.is_in_tray = False
+
+    def changeEvent(self, event):
+        # Optimize polling when minimized or restored
+        if event.type() == QtCore.QEvent.WindowStateChange:
+            if self.windowState() & Qt.WindowMinimized:
+                self.is_in_tray = True
+                self.timer.stop()
+                self.timer.start(self.tray_update_interval)  # Slow down updates
+                # Optionally pause animations here if needed
+                self.pause_animations()
+                self.hide()
+                self.tray_icon.show()
+                event.accept()
+                return
+            else:
+                if self.is_in_tray:
+                    self.is_in_tray = False
+                    self.timer.stop()
+                    self.timer.start(self.normal_update_interval)  # Restore normal updates
+                    self.resume_animations()
+        super().changeEvent(event)
+
+    def pause_animations(self):
+        # Pause battery widget animations if visible
+        if hasattr(self, 'battery_widget') and self.battery_widget.isVisible():
+            if hasattr(self.battery_widget, 'glow_animation'):
+                self.battery_widget.glow_animation.pause()
+        if hasattr(self, 'charging_widget') and self.charging_widget.isVisible():
+            if hasattr(self.charging_widget, 'glow_animation'):
+                self.charging_widget.glow_animation.pause()
+
+    def resume_animations(self):
+        # Resume battery widget animations if visible
+        if hasattr(self, 'battery_widget') and self.battery_widget.isVisible():
+            if hasattr(self.battery_widget, 'glow_animation'):
+                self.battery_widget.glow_animation.resume()
+        if hasattr(self, 'charging_widget') and self.charging_widget.isVisible():
+            if hasattr(self.charging_widget, 'glow_animation'):
+                self.charging_widget.glow_animation.resume()
 
     def load_initial_data(self):
         self.generate_battery_report()
@@ -1935,8 +1981,8 @@ class BatteryZ(QMainWindow):
                 subprocess.run(["powercfg", "/batteryreport", "/xml", "/output", self.report_path], check=True, shell=True, timeout=30)
                 time.sleep(1)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
-            logging.error(f"Couldn’t generate battery report: {e}")
-            QMessageBox.critical(self, "Error", f"Couldn’t generate battery report: {e}")
+            logging.error(f"Couldn't generate battery report: {e}")
+            QMessageBox.critical(self, "Error", f"Couldn't generate battery report: {e}")
 
     def save_cycle_cache(self, cycle_count, is_estimated, timestamp):
         cache_data = {
@@ -2700,42 +2746,42 @@ class BatteryZ(QMainWindow):
         charge_frequency = self.get_charge_frequency()
         
         base_message = (
-            f"Hi {username}, let’s talk about your laptop’s battery! A battery cycle is like a full charge from 0% to 100%. "
-            f"Your battery has gone through {cycle_count} cycles out of {total_cycles} it’s designed for, leaving {remaining_cycles} cycles to go. "
-            f"Over {usage_days} days of use, you’re averaging {cycles_per_day:.2f} cycles per day. "
+            f"Hi {username}, let's talk about your laptop's battery! A battery cycle is like a full charge from 0% to 100%. "
+            f"Your battery has gone through {cycle_count} cycles out of {total_cycles} it's designed for, leaving {remaining_cycles} cycles to go. "
+            f"Over {usage_days} days of use, you're averaging {cycles_per_day:.2f} cycles per day. "
             f"You charge about {charge_frequency:.2f} times per day, which affects how long your battery will last. "
             f"We estimate your battery has {remaining_life} left before it needs replacing."
         )
 
         if health_percent > 80:
             message = (
-                f"{base_message}\n\nYour battery is in top shape, like a champion athlete! You’re doing great keeping it healthy. "
-                f"Keep up the good work, and it’ll stay strong for a long time. Check back anytime for more insights!"
+                f"{base_message}\n\nYour battery is in top shape, like a champion athlete! You're doing great keeping it healthy. "
+                f"Keep up the good work, and it'll stay strong for a long time. Check back anytime for more insights!"
             )
             color = THEMES[self.current_theme]["alert_good"]
         elif health_percent > 60:
             message = (
-                f"{base_message}\n\nYour battery is doing well, like a reliable friend. It’s in good health, but a little care can go a long way. "
-                f"Try charging between 20-80% and avoid extreme heat. We’re here to help whenever you need us!"
+                f"{base_message}\n\nYour battery is doing well, like a reliable friend. It's in good health, but a little care can go a long way. "
+                f"Try charging between 20-80% and avoid extreme heat. We're here to help whenever you need us!"
             )
             color = THEMES[self.current_theme]["alert_good"]
         elif health_percent > 40:
             message = (
-                f"{base_message}\n\nYour battery is starting to show its age, like a seasoned traveler. It’s still got some life, but keep an eye on it. "
+                f"{base_message}\n\nYour battery is starting to show its age, like a seasoned traveler. It's still got some life, but keep an eye on it. "
                 f"Avoid draining it to 0% often, and consider a replacement in the near future. Pop back for updates!"
             )
             color = THEMES[self.current_theme]["alert_warning"]
             if not self.has_shown_health_alert:
-                QMessageBox.warning(self, "Battery Alert", f"Hey {username}, your battery’s getting tired. Start planning for a replacement soon!")
+                QMessageBox.warning(self, "Battery Alert", f"Hey {username}, your battery's getting tired. Start planning for a replacement soon!")
                 self.has_shown_health_alert = True
         else:
             message = (
-                f"{base_message}\n\nOh, {username}, your battery’s worked hard and needs a rest. It’s nearing the end of its life. "
-                f"Plan to replace it soon to keep your laptop running smoothly. We’re here to guide you every step of the way!"
+                f"{base_message}\n\nOh, {username}, your battery's worked hard and needs a rest. It's nearing the end of its life. "
+                f"Plan to replace it soon to keep your laptop running smoothly. We're here to guide you every step of the way!"
             )
             color = THEMES[self.current_theme]["alert_critical"]
             if not self.has_shown_health_alert:
-                QMessageBox.critical(self, "Battery Alert", f"Hey {username}, your battery’s almost done! Time to get a new one ASAP!")
+                QMessageBox.critical(self, "Battery Alert", f"Hey {username}, your battery's almost done! Time to get a new one ASAP!")
                 self.has_shown_health_alert = True
 
         return message, color
@@ -3124,7 +3170,7 @@ if __name__ == '__main__':
 
 """
 Dear User,
-Battery-Z is crafted with boundless love and precision to give your laptop’s battery the care it deserves. 
+Battery-Z is crafted with boundless love and precision to give your laptop's battery the care it deserves. 
 With military-grade algorithms, stunning visuals, and heartfelt messages, every line of code is designed to empower you with knowledge and peace of mind. 
 Enjoy your battery monitoring journey, and may your laptop stay powered with love for years to come!
 - Muhammad Kashan Tariq
