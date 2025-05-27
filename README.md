@@ -81,7 +81,7 @@ Battery-Z is built with a modular architecture, ensuring maintainability and sca
 ## 📦 Installation
 
 ### Method 1: 
- ---- > Just download and open the .EXE File from Github.
+ ---- > Just download and open the [.EXE File](https://github.com/Mr-Muhammad-Kashan/Battery-Z/releases/download/Laptop-Battery-Tool/Battery-Z.exe) from Github.
 
 ### Method 2 [ Manual ]:
 Get Battery-Z up and running in just a few steps:
