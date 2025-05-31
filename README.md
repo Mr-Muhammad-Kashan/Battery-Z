@@ -5,7 +5,6 @@
 
 **Battery-Z: Your Laptop’s Battery Companion, Built with Precision and Care**  
 Battery-Z is an open-source, cross-platform battery monitoring and optimization tool designed to empower users with deep insights into their laptop’s battery health and performance. Crafted with ❤️ by [Muhammad Kashan Tariq](https://github.com/Mr-Muhammad-Kashan), Battery-Z combines advanced diagnostics, intuitive visualizations, and actionable tips to extend battery life and enhance user experience. Whether you’re a casual user, a developer, or a power enthusiast, Battery-Z is your go-to solution for keeping your laptop’s battery in top shape! 🌟
-sdfsdfsdfsdf
 ---
 
 ## 🚀 Features
