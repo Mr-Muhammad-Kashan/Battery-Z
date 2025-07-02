@@ -156,7 +156,7 @@ Have questions or want to connect? Reach out to the creator:
 - **LinkedIn**: [Muhammad Kashan Tariq](https://www.linkedin.com/in/muhammad-kashan-tariq/)  
 - **Support**: Open an issue or join the [Discussions](https://github.com/Mr-Muhammad-Kashan/Battery-Z/discussions) page. 📩
 
-Want to show some love? [Buy me a coffee ☕](https://linktr.ee/its_Muhammad_Kashan) to support the project! 
+Want to show some love? [Buy me a coffee ☕](https://coindrop.to/mr-shan) to support the project! 
 
 ---
 
