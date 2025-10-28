@@ -242,6 +242,24 @@ except ImportError as e:
     # Exit the application as the UI cannot be created.
     sys.exit(1)
 
+# ============================================================================
+# SECTION 2.5: ASSET PATH HELPER FOR PYINSTALLER
+# Description: This function ensures that the application can find asset files
+#              (like logos) whether it's running from source or as a bundled
+#              PyInstaller executable.
+# ============================================================================
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        logging.info(f"Running bundled. Base path: {base_path}")
+    except Exception:
+        # Not bundled, use the normal script directory
+        base_path = os.path.abspath(".")
+        logging.info(f"Running from source. Base path: {base_path}")
+
+    return os.path.join(base_path, relative_path)
 
 # ============================================================================
 # SECTION 2: GLOBAL CONSTANTS AND CONFIGURATIONS
@@ -261,8 +279,9 @@ AUTHOR_LINKEDIN = "https://www.linkedin.com/in/muhammad-kashan-tariq"           
 BUY_ME_COFFEE = "https://mr-muhammad-kashan.github.io/Buy-Me-A-Coffee-Website/"         # Link for users to support the developer.
 
 # --- Asset Paths ---
-LOGO_ICO_PATH = "logo.ico"                                  # Path to the icon file for the window and system tray.
-LOGO_SVG_PATH = "logo.svg"                                  # Path to the scalable vector graphics logo for the UI.
+# Use resource_path to ensure logos are found when bundled
+LOGO_ICO_PATH = resource_path("logo.ico") # Path to the icon file for the window and system tray.
+LOGO_SVG_PATH = resource_path("logo.svg") # Path to the scalable vector graphics logo for the UI.
 
 # --- Data Mappings and Dictionaries ---
 
