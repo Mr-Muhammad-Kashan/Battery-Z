@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Battery-Z - Advanced Windows Battery Monitoring Utility with Military-Grade Precision">
+    <meta name="keywords" content="battery monitor, windows, health, RUL, cycle count, battery analysis, open source">
+    <meta name="author" content="Battery-Z">
+    <meta name="theme-color" content="#2d5a27">
+    <meta name="robots" content="index, follow">
+    <title>Battery-Z - Military-Grade Battery Intelligence</title>
+    
+    <!-- Preconnect to CDNs for faster loading -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <!-- Font Awesome 6.5.1 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    
+    <style>
+        /* ===== CSS VARIABLES ===== */
+        :root {
+            --primary-green: #2d5a27;
+            --accent-green: #4a8b3a;
+            --light-green: #6ab04c;
+            --neon-green: #00ff88;
+            --dark-bg: #0a0f0a;
+            --card-bg: rgba(45, 90, 39, 0.15);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --text-light: #f0f8f0;
+            --text-secondary: #c8e4c8;
+            --shadow-green: rgba(106, 176, 76, 0.4);
+            --coffee-yellow: #ffdd44;
+            --coffee-yellow-hover: #ffcc00;
+            --blur-bg: rgba(10, 15, 10, 0.92);
+            --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* ===== RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-light);
+            overflow-x: hidden;
+            line-height: 1.6;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        /* ===== CANVAS BACKGROUND ===== */
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* ===== MAIN LAYOUT ===== */
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* ===== LEFT NAVIGATION SIDEBAR ===== */
+        .nav-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: linear-gradient(180deg, rgba(45, 90, 39, 0.25) 0%, var(--blur-bg) 100%);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-right: 1px solid rgba(106, 176, 76, 0.4);
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 2rem 0;
+            overflow-y: auto;
+        }
+        
+        .nav-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .nav-sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav-sidebar::-webkit-scrollbar-thumb {
+            background: var(--accent-green);
+            border-radius: 3px;
+        }
+        
+        /* ===== BRAND LOGO ===== */
+        .brand-logo {
+            text-align: center;
+            padding: 0 1.5rem;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        .brand-logo h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--neon-green);
+            text-shadow: 0 0 25px rgba(0, 255, 136, 0.6), 0 0 50px rgba(0, 255, 136, 0.3);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .brand-tagline {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+        
+        /* ===== NAVIGATION MENU ===== */
+        .nav-menu {
+            list-style: none;
+            padding: 0 1rem;
+        }
+        
+        .nav-item {
+            margin-bottom: 0.75rem;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 1.1rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 14px;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            font-weight: 500;
+            font-size: 1.05rem;
+        }
+        
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--accent-green), transparent);
+            transition: width 0.4s ease;
+            z-index: -1;
+        }
+        
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            width: 100%;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--neon-green);
+            background: rgba(106, 176, 76, 0.2);
+            transform: translateX(8px);
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.2);
+        }
+        
+        .nav-link i {
+            width: 24px;
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-link:hover i,
+        .nav-link.active i {
+            transform: scale(1.15);
+        }
+        
+        /* ===== MOBILE MENU TOGGLE ===== */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1.2rem;
+            left: 1.2rem;
+            z-index: 1001;
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-green));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.9rem 1.1rem;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .mobile-menu-toggle:hover {
+            background: linear-gradient(135deg, var(--accent-green), var(--light-green));
+            transform: scale(1.08);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+        }
+        
+        .mobile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+        
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            margin-left: 280px;
+            flex: 1;
+            min-height: 100vh;
+            position: relative;
+            width: calc(100% - 280px);
+        }
+        
+        .section {
+            min-height: 100vh;
+            padding: 5rem 3rem;
+            display: flex;
+            align-items: center;
+            position: relative;
+            background: rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        .section:nth-child(even) {
+            background: rgba(45, 90, 39, 0.08);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 0 15px;
+        }
+        
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.08);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+        
+        @keyframes glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(0, 255, 136, 0.7);
+            }
+        }
+        
+        /* ===== SCROLL ANIMATIONS ===== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* ===== HOME SECTION ===== */
+        .hero-content {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--neon-green) 0%, var(--light-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            letter-spacing: 2px;
+            animation: fadeInDown 1s ease-out 0.2s both;
+        }
+        
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.6rem);
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-weight: 300;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+        
+        /* ===== APP SHOWCASE WITH 3D EFFECT ===== */
+        .app-showcase {
+            position: relative;
+            max-width: 800px;
+            margin: 3rem auto;
+            perspective: 1500px;
+            animation: fadeIn 1s ease-out 0.6s both;
+        }
+        
+        .app-image {
+            width: 100%;
+            aspect-ratio: 16/10;
+            background: linear-gradient(135deg, rgba(45, 90, 39, 0.25), rgba(106, 176, 76, 0.15));
+            border-radius: 24px;
+            border: 2px solid rgba(106, 176, 76, 0.4);
+            -webkit-backdrop-filter: blur(25px);
+            backdrop-filter: blur(25px);
+            overflow: hidden;
+            transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+        
+        .app-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            border-radius: 22px;
+            transition: transform 0.3s ease;
+        }
+        
+        .app-image::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            border-radius: 22px;
+        }
+        
+        .app-image:hover::after {
+            opacity: 1;
+        }
+        
+        /* ===== FEATURE CARDS - 4 IN A ROW ON DESKTOP ===== */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            margin-top: 4rem;
+            animation: fadeInUp 1s ease-out 0.8s both;
+        }
+        
+        .feature-card {
+            background: var(--card-bg);
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(106, 176, 76, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: var(--transition-smooth);
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 25px 50px var(--shadow-green), 0 0 30px rgba(0, 255, 136, 0.2);
+            border-color: var(--neon-green);
+        }
+        
+        .feature-icon {
+            font-size: 3.5rem;
+            color: var(--neon-green);
+            margin-bottom: 1.5rem;
+            display: block;
+            transition: transform 0.4s ease;
+            filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.5));
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.15) rotateY(360deg);
+        }
+        
+        .feature-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+        }
+        
+        .feature-desc {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+        
+        /* ===== BUTTONS ===== */
+        .btn-primary-green {
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-green));
+            border: none;
+            color: white;
+            padding: 1.2rem 3rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 1s ease-out 1s both;
+        }
+        
+        .btn-primary-green::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .btn-primary-green:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(106, 176, 76, 0.5);
+            color: white;
+        }
+        
+        .btn-primary-green:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary-green:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+        
+        /* ===== SECTION HEADERS ===== */
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .section-title {
+            font-size: clamp(2.5rem, 6vw, 3.5rem);
+            font-weight: 800;
+            color: var(--neon-green);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+            letter-spacing: 1px;
+        }
+        
+        .section-subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.3rem);
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        /* ===== DOWNLOAD SECTION ===== */
+        .download-content {
+            text-align: center;
+        }
+        
+        .download-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 3.5rem 3rem;
+            border: 2px solid rgba(106, 176, 76, 0.3);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            transition: var(--transition-smooth);
+        }
+        
+        .download-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 80px rgba(0, 255, 136, 0.3);
+            border-color: var(--neon-green);
+        }
+        
+        .download-icon {
+            font-size: 5rem;
+            color: var(--neon-green);
+            margin-bottom: 2rem;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 25px rgba(0, 255, 136, 0.6));
+        }
+        
+        .version-info {
+            background: rgba(106, 176, 76, 0.15);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(106, 176, 76, 0.3);
+        }
+        
+        .requirements {
+            text-align: left;
+            margin-top: 2.5rem;
+        }
+        
+        .req-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        .req-item i {
+            color: var(--neon-green);
+            margin-right: 0.8rem;
+            font-size: 1.1rem;
+        }
+        
+        /* ===== SUPPORT SECTION (BEFORE FAQ) ===== */
+        .support-section {
+            background: linear-gradient(135deg, rgba(45, 90, 39, 0.12), rgba(106, 176, 76, 0.08));
+        }
+        
+        .open-source-card {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.12), rgba(45, 90, 39, 0.25));
+            border: 2px solid rgba(0, 255, 136, 0.4);
+            border-radius: 24px;
+            padding: 3.5rem 3rem;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.25);
+            margin-bottom: 4rem;
+            transition: var(--transition-smooth);
+        }
+        
+        .open-source-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 80px rgba(0, 255, 136, 0.35);
+            border-color: var(--neon-green);
+        }
+        
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(135deg, #333, #555);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.15rem;
+            transition: var(--transition-smooth);
+            margin-top: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .github-link:hover {
+            color: white;
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, #555, #333);
+        }
+        
+        .github-link i {
+            font-size: 1.6rem;
+        }
+        
+        /* ===== SOCIAL MEDIA LINKS - ALL GREEN THEMED ===== */
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 3.5rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .social-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            text-decoration: none;
+            color: white;
+            font-size: 2.2rem;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-green));
+            border: 3px solid var(--light-green);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .social-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--neon-green), var(--light-green));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: -1;
+        }
+        
+        .social-link:hover::before {
+            opacity: 1;
+        }
+        
+        .social-link:hover {
+            transform: translateY(-12px) scale(1.15);
+            box-shadow: 0 20px 45px rgba(0, 255, 136, 0.5);
+            border-color: var(--neon-green);
+        }
+        
+        .social-link i {
+            position: relative;
+            z-index: 1;
+            transition: transform 0.4s ease;
+        }
+        
+        .social-link:hover i {
+            transform: rotateY(360deg) scale(1.1);
+        }
+        
+        /* ===== COFFEE SECTION - NEW GRADIENT WAVE EFFECT ===== */
+        .coffee-section {
+            background: linear-gradient(135deg, rgba(255, 221, 68, 0.12), rgba(255, 204, 0, 0.08));
+            border: 3px solid var(--coffee-yellow);
+            border-radius: 28px;
+            padding: 3.5rem 3rem;
+            text-align: center;
+            margin: 4rem 0;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(255, 221, 68, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .coffee-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 221, 68, 0.1) 50%,
+                transparent 70%
+            );
+            animation: wave 8s linear infinite;
+            z-index: 0;
+        }
+        
+        @keyframes wave {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                transform: translate(50%, 50%) rotate(360deg);
+            }
+        }
+        
+        .coffee-section > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .coffee-title {
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            font-weight: 900;
+            color: var(--coffee-yellow);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 25px rgba(255, 221, 68, 0.6);
+        }
+        
+        .coffee-subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+        
+        .coffee-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(135deg, var(--coffee-yellow), var(--coffee-yellow-hover));
+            color: #000;
+            padding: 1.5rem 3.5rem;
+            border-radius: 60px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.35rem;
+            transition: var(--transition-smooth);
+            box-shadow: 0 15px 40px rgba(255, 221, 68, 0.45);
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .coffee-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .coffee-button:hover::before {
+            left: 100%;
+        }
+        
+        .coffee-button:hover {
+            color: #000;
+            transform: translateY(-10px) scale(1.08);
+            box-shadow: 0 25px 60px rgba(255, 221, 68, 0.65);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .coffee-icon {
+            font-size: 2.2rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        /* ===== TECH BADGES ===== */
+        .tech-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: center;
+        }
+        
+        .tech-badge {
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-green));
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: 1px solid var(--light-green);
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tech-badge:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+        }
+        
+        /* ===== FAQ SECTION ===== */
+        .faq-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .faq-item {
+            background: var(--card-bg);
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(106, 176, 76, 0.3);
+            overflow: hidden;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+        
+        .faq-item:hover {
+            border-color: var(--light-green);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.2);
+        }
+        
+        .faq-question {
+            padding: 1.8rem 2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition-smooth);
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            color: var(--text-light);
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        
+        .faq-question:hover {
+            background: rgba(106, 176, 76, 0.12);
+        }
+        
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0, 0, 0, 0.25);
+        }
+        
+        .faq-answer.open {
+            max-height: 300px;
+        }
+        
+        .faq-answer-content {
+            padding: 1.8rem 2rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+        
+        .faq-icon {
+            transition: transform 0.4s ease;
+            color: var(--neon-green);
+            font-size: 1.3rem;
+        }
+        
+        .faq-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        
+        /* Extra Large Screens */
+        @media (min-width: 1920px) {
+            .container {
+                max-width: 1600px;
+            }
+        }
+        
+        /* Large Screens */
+        @media (max-width: 1400px) {
+            .features-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1.5rem;
+            }
+        }
+        
+        /* Tablets and Small Laptops */
+        @media (max-width: 1200px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+            
+            .nav-sidebar {
+                width: 260px;
+            }
+            
+            .content-area {
+                margin-left: 260px;
+                width: calc(100% - 260px);
+            }
+        }
+        
+        /* Tablet Portrait and Mobile Landscape */
+        @media (max-width: 1024px) {
+            .nav-sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .nav-sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .content-area {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .section {
+                padding: 4rem 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+        
+        /* Mobile Devices */
+        @media (max-width: 768px) {
+            .section {
+                padding: 3rem 1.5rem;
+                min-height: auto;
+            }
+            
+            .hero-title {
+                font-size: 2.8rem;
+                margin-bottom: 1rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.15rem;
+                margin-bottom: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-top: 2.5rem;
+            }
+            
+            .feature-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .app-showcase {
+                margin: 2rem auto;
+            }
+            
+            .app-image {
+                aspect-ratio: 4/3;
+                border-radius: 16px;
+            }
+            
+            .btn-primary-green {
+                padding: 1rem 2.5rem;
+                font-size: 1.05rem;
+            }
+            
+            .download-card {
+                padding: 2.5rem 2rem;
+            }
+            
+            .social-links {
+                gap: 1.5rem;
+            }
+            
+            .social-link {
+                width: 70px;
+                height: 70px;
+                font-size: 1.8rem;
+            }
+            
+            .coffee-section {
+                padding: 2.5rem 2rem;
+            }
+            
+            .coffee-button {
+                padding: 1.2rem 2.5rem;
+                font-size: 1.15rem;
+            }
+            
+            .section-title {
+                font-size: 2.5rem;
+            }
+            
+            .brand-logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .nav-link {
+                padding: 1rem 1.2rem;
+                font-size: 1rem;
+            }
+        }
+        
+        /* Small Mobile Devices */
+        @media (max-width: 480px) {
+            .section {
+                padding: 2.5rem 1rem;
+            }
+            
+            .hero-title {
+                font-size: 2.2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            
+            .btn-primary-green {
+                padding: 0.9rem 2rem;
+                font-size: 0.95rem;
+            }
+            
+            .feature-card {
+                padding: 1.8rem 1.2rem;
+            }
+            
+            .feature-icon {
+                font-size: 2.8rem;
+            }
+            
+            .feature-title {
+                font-size: 1.15rem;
+            }
+            
+            .feature-desc {
+                font-size: 0.9rem;
+            }
+            
+            .download-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .social-link {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            
+            .coffee-button {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+            
+            .app-image {
+                aspect-ratio: 1/1;
+            }
+            
+            .section-header {
+                margin-bottom: 2.5rem;
+            }
+            
+            .github-link {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+            
+            .open-source-card {
+                padding: 2.5rem 1.5rem;
+            }
+        }
+        
+        /* Extra Small Devices */
+        @media (max-width: 360px) {
+            .section {
+                padding: 2rem 0.8rem;
+            }
+            
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .btn-primary-green {
+                padding: 0.8rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .features-grid {
+                gap: 1.2rem;
+            }
+            
+            .social-links {
+                gap: 1rem;
+            }
+        }
+        
+        /* Landscape Mode Adjustments */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .section {
+                min-height: auto;
+                padding: 3rem 2rem;
+            }
+            
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .app-showcase {
+                margin: 1.5rem auto;
+            }
+        }
+        
+        /* High DPI Displays */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .feature-icon,
+            .download-icon {
+                filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.4));
+            }
+        }
+        
+        /* Reduced Motion Preference */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+        
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --dark-bg: #050805;
+            }
+        }
+        
+        /* Print Styles */
+        @media print {
+            .nav-sidebar,
+            .mobile-menu-toggle,
+            #canvas-bg {
+                display: none !important;
+            }
+            
+            .content-area {
+                margin-left: 0 !important;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas Background -->
+    <canvas id="canvas-bg"></canvas>
+    
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" id="mobile-toggle" aria-label="Toggle navigation menu">
+        <i class="fas fa-bars"></i>
+    </button>
+        <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Navigation Sidebar -->
+        <nav class="nav-sidebar" id="nav-sidebar">
+            <div class="brand-logo">
+                <h1>Battery-Z</h1>
+                <p class="brand-tagline">Military-Grade Battery Intelligence</p>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#home" class="nav-link active" data-section="home">
+                        <i class="fas fa-home"></i>
+                        Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#download" class="nav-link" data-section="download">
+                        <i class="fas fa-download"></i>
+                        Download
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#support" class="nav-link" data-section="support">
+                        <i class="fas fa-heart"></i>
+                        Support
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#faq" class="nav-link" data-section="faq">
+                        <i class="fas fa-question-circle"></i>
+                        FAQ
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <!-- Right Content Area -->
+        <main class="content-area">
+            <!-- HOME SECTION -->
+            <section id="home" class="section">
+                <div class="container">
+                    <div class="hero-content fade-in">
+                        <h1 class="hero-title">Battery-Z</h1>
+                        <p class="hero-subtitle">Advanced Windows Battery Monitoring with Military-Grade Precision</p>
+                        
+                        <div class="app-showcase">
+                            <div class="app-image" id="app-image">
+                                <img src="Home-Page-Image.png" 
+                                     alt="Battery-Z Interface - Real-time monitoring dashboard" 
+                                     loading="lazy">
+                            </div>
+                        </div>
+                        
+                        <a href="#download" class="btn-primary-green">
+                            <i class="fas fa-download"></i> Download Now
+                        </a>
+                        
+                        <div class="features-grid">
+                            <div class="feature-card fade-in">
+                                <i class="fas fa-heartbeat feature-icon"></i>
+                                <h3 class="feature-title">Tri-Factor Health Matrix</h3>
+                                <p class="feature-desc">Advanced algorithm combining physical condition, cycle wear, and future viability for accurate health assessment.</p>
+                            </div>
+                            
+                            <div class="feature-card fade-in">
+                                <i class="fas fa-clock feature-icon"></i>
+                                <h3 class="feature-title">Remaining Life Prediction</h3>
+                                <p class="feature-desc">AI-powered RUL calculations based on usage patterns and degradation analysis.</p>
+                            </div>
+                            
+                            <div class="feature-card fade-in">
+                                <i class="fas fa-sync-alt feature-icon"></i>
+                                <h3 class="feature-title">Real-time Monitoring</h3>
+                                <p class="feature-desc">Live battery status updates every 3 seconds with temperature and charge tracking.</p>
+                            </div>
+                            
+                            <div class="feature-card fade-in">
+                                <i class="fas fa-database feature-icon"></i>
+                                <h3 class="feature-title">Multi-Source Data</h3>
+                                <p class="feature-desc">Robust data collection from WMI, PowerCfg, PowerShell with intelligent fallbacks.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- DOWNLOAD SECTION -->
+            <section id="download" class="section">
+                <div class="container">
+                    <div class="section-header fade-in">
+                        <h2 class="section-title">Download Battery-Z</h2>
+                        <p class="section-subtitle">Get the most advanced battery monitoring tool for Windows</p>
+                    </div>
+                    
+                    <div class="download-content fade-in">
+                        <div class="download-card">
+                            <i class="fas fa-download download-icon"></i>
+                            <h3 style="color: var(--neon-green); margin-bottom: 1rem; font-size: 1.8rem; font-weight: 700;">Battery-Z v2.1.0</h3>
+                            
+                            <div class="version-info">
+                                <strong style="font-size: 1.1rem; color: var(--text-light);">Latest Version</strong><br>
+                                <small style="color: var(--text-secondary);">Released: October 2025</small><br>
+                                <small style="color: var(--text-secondary);">File Size: ~ 46 MB</small>
+                            </div>
+                            
+                            <a href="https://github.com/Mr-Muhammad-Kashan/Battery-Z/releases/download/Battery-Z(v2.1.0)/Battery-Z.rar" class="btn-primary-green" style="margin: 1.5rem 0;">
+                                <i class="fas fa-download"></i> Download for Windows
+                            </a>
+                            
+                            <div class="requirements">
+                                <h4 style="color: var(--neon-green); margin-bottom: 1.2rem; font-size: 1.2rem;">System Requirements</h4>
+                                <div class="req-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    Windows 8 or later (64-bit recommended)
+                                </div>
+                                <div class="req-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    Python 3.8+ (bundled in installer)
+                                </div>
+                                <div class="req-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    50 MB free disk space
+                                </div>
+                                <div class="req-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    Administrator privileges for WMI access
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SUPPORT SECTION (MOVED BEFORE FAQ) -->
+            <section id="support" class="section support-section">
+                <div class="container">
+                    <div class="section-header fade-in">
+                        <h2 class="section-title">Support the Project</h2>
+                        <p class="section-subtitle">Help keep Battery-Z free and open source</p>
+                    </div>
+                    
+                    <!-- Open Source Information -->
+                    <div class="open-source-card fade-in">
+                        <i class="fab fa-github" style="font-size: 5rem; color: var(--neon-green); margin-bottom: 1.5rem; filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.5));"></i>
+                        <h3 style="color: var(--neon-green); font-size: 2.2rem; margin-bottom: 1rem; font-weight: 800;">100% Open Source</h3>
+                        <p style="font-size: 1.15rem; color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.7; max-width: 800px; margin-left: auto; margin-right: auto;">
+                            Battery-Z is completely open source! Access the full source code, contribute to development, 
+                            report issues, or fork the project for your own needs. Transparency and community collaboration drive our mission.
+                        </p>
+                        <a href="https://github.com/Mr-Muhammad-Kashan/Battery-Z.git" class="github-link" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-github"></i>
+                            View Source Code on GitHub
+                        </a>
+                    </div>
+                    
+                    <!-- Social Media Links -->
+                    <div class="fade-in">
+                        <h3 style="text-align: center; color: var(--neon-green); margin-bottom: 2.5rem; font-size: 2rem; font-weight: 700;">Connect With Us</h3>
+                        <div class="social-links">
+                            <a href="https://www.linkedin.com/in/muhammad-kashan-tariq" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                                <i class="fab fa-linkedin-in"></i>
+                            </a>
+                            <a href="https://x.com/M_Kashan_exe" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="https://github.com/Mr-Muhammad-Kashan" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            <a href="mailto:m.kashan.exe@gmail.com" class="social-link" aria-label="Email">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Buy Me A Coffee Section -->
+                    <div class="coffee-section fade-in">
+                        <div class="coffee-title">☕ Support Development</div>
+                        <p class="coffee-subtitle">
+                            If Battery-Z has helped you monitor your battery health and extend your device's lifespan, 
+                            consider supporting the continued development with a coffee! Every contribution helps maintain 
+                            and improve this free, open-source tool.
+                        </p>
+                        <a href="https://mr-muhammad-kashan.github.io/Buy-Me-A-Coffee-Website/" class="coffee-button" target="_blank" rel="noopener noreferrer">
+                            <i class="fas fa-coffee coffee-icon"></i>
+                            Buy Me A Coffee
+                        </a>
+                        <p style="margin-top: 1.8rem; color: var(--text-secondary); font-size: 1rem;">
+                            💚 Your support keeps this project alive and thriving!
+                        </p>
+                    </div>
+                    
+                    <!-- Project Information -->
+                    <div class="row fade-in" style="margin-top: 4rem;">
+                        <div class="col-lg-6 mb-4 mb-lg-0">
+                            <h4 style="color: var(--neon-green); margin-bottom: 1.2rem; font-size: 1.5rem; font-weight: 700;">About the Developer</h4>
+                            <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.05rem;">
+                                Battery-Z is developed By Muhammad Kashan Tariq, Who is a Software Engineer with passion for creating tools that solve real-world problems. 
+                                With expertise in system-level programming and battery technology, this project represents 
+                                the intersection of technical precision and user-friendly design.
+                            </p>
+                        </div>
+                        <div class="col-lg-6">
+                            <h4 style="color: var(--neon-green); margin-bottom: 1.2rem; font-size: 1.5rem; font-weight: 700;">Technology Stack</h4>
+                            <div class="tech-badges">
+                                <span class="tech-badge">Python 3.8+</span>
+                                <span class="tech-badge">PyQt5</span>
+                                <span class="tech-badge">WMI</span>
+                                <span class="tech-badge">PowerShell</span>
+                                <span class="tech-badge">Windows API</span>
+                                <span class="tech-badge">Multi-Threading</span>
+                                <span class="tech-badge">Real-time Analytics</span>
+                                <span class="tech-badge">Open Source</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- FAQ SECTION (MOVED AFTER SUPPORT) -->
+            <section id="faq" class="section">
+                <div class="container">
+                    <div class="section-header fade-in">
+                        <h2 class="section-title">Frequently Asked Questions</h2>
+                        <p class="section-subtitle">Everything you need to know about Battery-Z</p>
+                    </div>
+                    
+                    <div class="faq-container fade-in">
+                        <div class="faq-item">
+                            <button class="faq-question" data-faq="0">
+                                <span>How accurate is the battery health calculation?</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </button>
+                            <div class="faq-answer" data-answer="0">
+                                <div class="faq-answer-content">
+                                    Battery-Z uses our proprietary Tri-Factor Health Matrix that combines physical condition, cycle utilization, 
+                                    and future viability scores. This provides accuracy within ±2% compared to professional battery analyzers.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <button class="faq-question" data-faq="1">
+                                <span>Will Battery-Z work on my laptop model?</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </button>
+                            <div class="faq-answer" data-answer="1">
+                                <div class="faq-answer-content">
+                                    Battery-Z is compatible with all Windows 8+ systems and includes a comprehensive database of 50+ 
+                                    manufacturers. If your specific model isn't recognized, the software uses intelligent estimation algorithms.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <button class="faq-question" data-faq="2">
+                                <span>Does the software affect system performance?</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </button>
+                            <div class="faq-answer" data-answer="2">
+                                <div class="faq-answer-content">
+                                    No. Battery-Z uses efficient background threads and intelligent caching to minimize system impact. 
+                                    CPU usage is typically less than 0.1% during normal operation.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <button class="faq-question" data-faq="3">
+                                <span>How often should I run Battery-Z?</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </button>
+                            <div class="faq-answer" data-answer="3">
+                                <div class="faq-answer-content">
+                                    Battery-Z can run continuously in the background with system tray integration. Real-time monitoring 
+                                    updates every 3 seconds, while comprehensive analysis can be performed weekly for optimal tracking.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <button class="faq-question" data-faq="4">
+                                <span>Is my data collected or shared?</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </button>
+                            <div class="faq-answer" data-answer="4">
+                                <div class="faq-answer-content">
+                                    Absolutely not. Battery-Z operates entirely offline and stores all data locally on your system. 
+                                    No telemetry, analytics, or personal information is transmitted or collected.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <button class="faq-question" data-faq="5">
+                                <span>Can I export battery reports?</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </button>
+                            <div class="faq-answer" data-answer="5">
+                                <div class="faq-answer-content">
+                                    Yes, Battery-Z includes comprehensive reporting features with export options for CSV, JSON, and PDF formats. 
+                                    Historical data tracking allows for trend analysis over time.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <button class="faq-question" data-faq="6">
+                                <span>What if I need technical support?</span>
+                                <i class="fas fa-chevron-down faq-icon"></i>
+                            </button>
+                            <div class="faq-answer" data-answer="6">
+                                <div class="faq-answer-content">
+                                    Technical support is available through our GitHub repository, community forums, and direct contact. 
+                                    Most issues can be resolved through the built-in diagnostic tools and comprehensive documentation.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Bootstrap 5.3.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <script>
+        // ===== PERFORMANCE & DEVICE DETECTION =====
+        const DeviceDetector = {
+            isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+            isTablet: /(iPad|tablet|playbook|silk)|(android(?!.*mobile))/i.test(navigator.userAgent),
+            isLowEnd: () => {
+                const memory = navigator.deviceMemory || 4;
+                const cores = navigator.hardwareConcurrency || 4;
+                const connection = navigator.connection?.effectiveType || '4g';
+                return memory < 4 || cores <= 2 || ['slow-2g', '2g', '3g'].includes(connection);
+            },
+            hasTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+            screenSize: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                ratio: window.devicePixelRatio || 1
+            }
+        };
+        
+        // ===== ENHANCED PARTICLE SYSTEM =====
+        class ParticleSystem {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+                this.particles = [];
+                this.mouse = { x: 0, y: 0, radius: DeviceDetector.isMobile ? 100 : 150 };
+                this.isLowEnd = DeviceDetector.isLowEnd();
+                this.maxParticles = this.getOptimalParticleCount();
+                this.animationId = null;
+                this.isActive = true;
+                this.fps = 0;
+                this.lastTime = performance.now();
+                this.frameCount = 0;
+                
+                this.settings = {
+                    particleSpeed: this.isLowEnd ? 0.3 : 0.5,
+                    connectionDistance: this.isLowEnd ? 100 : 150,
+                    mouseInfluence: this.isLowEnd ? 80 : 120,
+                    glowEffect: !this.isLowEnd,
+                    maxConnections: this.isLowEnd ? 3 : 5
+                };
+                
+                this.init();
+            }
+            
+            getOptimalParticleCount() {
+                const area = window.innerWidth * window.innerHeight;
+                const density = this.isLowEnd ? 0.00003 : 0.00008;
+                const calculated = Math.floor(area * density);
+                return Math.max(
+                    this.isLowEnd ? 20 : 50,
+                    Math.min(calculated, this.isLowEnd ? 40 : 120)
+                );
+            }
+            
+            init() {
+                this.resize();
+                this.createParticles();
+                this.bindEvents();
+                this.animate();
+            }
+            
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.createParticles();
+            }
+            
+            createParticles() {
+                this.particles = [];
+                for (let i = 0; i < this.maxParticles; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * this.settings.particleSpeed,
+                        vy: (Math.random() - 0.5) * this.settings.particleSpeed,
+                        size: Math.random() * (this.isLowEnd ? 2 : 3) + 1,
+                        opacity: Math.random() * 0.5 + 0.5,
+                        hue: 110 + Math.random() * 50,
+                        connections: 0
+                    });
+                }
+            }
+            
+            updateParticles() {
+                this.particles.forEach(particle => {
+                    // Update position
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    
+                    // Mouse interaction
+                    if (!DeviceDetector.isMobile) {
+                        const dx = this.mouse.x - particle.x;
+                        const dy = this.mouse.y - particle.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < this.settings.mouseInfluence) {
+                            const force = (this.settings.mouseInfluence - distance) / this.settings.mouseInfluence;
+                            particle.vx += (dx / distance) * force * 0.02;
+                            particle.vy += (dy / distance) * force * 0.02;
+                            particle.opacity = Math.min(1, 0.8 + force * 0.2);
+                        }
+                    }
+                    
+                    // Boundary wrapping
+                    const margin = 50;
+                    if (particle.x < -margin) particle.x = this.canvas.width + margin;
+                    if (particle.x > this.canvas.width + margin) particle.x = -margin;
+                    if (particle.y < -margin) particle.y = this.canvas.height + margin;
+                    if (particle.y > this.canvas.height + margin) particle.y = -margin;
+                    
+                    // Velocity damping
+                    particle.vx *= 0.99;
+                    particle.vy *= 0.99;
+                    
+                    // Random movement
+                    if (!this.isLowEnd) {
+                        particle.vx += (Math.random() - 0.5) * 0.01;
+                        particle.vy += (Math.random() - 0.5) * 0.01;
+                    }
+                    
+                    // Reset connection count
+                    particle.connections = 0;
+                });
+            }
+            
+            drawParticles() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw connections
+                if (!this.isLowEnd) {
+                    this.particles.forEach((particle, i) => {
+                        if (particle.connections >= this.settings.maxConnections) return;
+                        
+                        for (let j = i + 1; j < this.particles.length; j++) {
+                            const other = this.particles[j];
+                            if (other.connections >= this.settings.maxConnections) continue;
+                            
+                            const dx = particle.x - other.x;
+                            const dy = particle.y - other.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance < this.settings.connectionDistance) {
+                                const opacity = (1 - distance / this.settings.connectionDistance) * 0.3;
+                                const avgHue = (particle.hue + other.hue) / 2;
+                                
+                                this.ctx.strokeStyle = `hsla(${avgHue}, 70%, 60%, ${opacity})`;
+                                this.ctx.lineWidth = 1.5;
+                                this.ctx.beginPath();
+                                this.ctx.moveTo(particle.x, particle.y);
+                                this.ctx.lineTo(other.x, other.y);
+                                this.ctx.stroke();
+                                
+                                particle.connections++;
+                                other.connections++;
+                            }
+                        }
+                    });
+                }
+                
+                // Draw particles
+                this.particles.forEach(particle => {
+                    // Glow effect
+                    if (this.settings.glowEffect) {
+                        this.ctx.shadowBlur = 15;
+                        this.ctx.shadowColor = `hsla(${particle.hue}, 80%, 60%, ${particle.opacity})`;
+                    }
+                    
+                    // Main particle
+                    this.ctx.fillStyle = `hsla(${particle.hue}, 75%, 65%, ${particle.opacity})`;
+                    this.ctx.beginPath();
+                    this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // Inner glow
+                    if (!this.isLowEnd) {
+                        this.ctx.fillStyle = `hsla(${particle.hue}, 80%, 85%, ${particle.opacity * 0.6})`;
+                        this.ctx.beginPath();
+                        this.ctx.arc(
+                            particle.x - particle.size * 0.25,
+                            particle.y - particle.size * 0.25,
+                            particle.size * 0.5,
+                            0, Math.PI * 2
+                        );
+                        this.ctx.fill();
+                    }
+                    
+                    this.ctx.shadowBlur = 0;
+                });
+            }
+            
+            animate() {
+                if (!this.isActive) return;
+                
+                const currentTime = performance.now();
+                
+                // Update and draw only if enough time has passed
+                if (currentTime - this.lastTime >= (1000 / (this.isLowEnd ? 30 : 60))) {
+                    this.updateParticles();
+                    this.drawParticles();
+                    
+                    // Calculate FPS
+                    this.frameCount++;
+                    if (currentTime - this.lastTime >= 1000) {
+                        this.fps = this.frameCount;
+                        this.frameCount = 0;
+                        this.lastTime = currentTime;
+                    }
+                }
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+            
+            bindEvents() {
+                // Mouse move
+                if (!DeviceDetector.isMobile) {
+                    let mouseMoveTimeout;
+                    document.addEventListener('mousemove', (e) => {
+                        clearTimeout(mouseMoveTimeout);
+                        this.mouse.x = e.clientX;
+                        this.mouse.y = e.clientY;
+                    });
+                }
+                
+                // Resize
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.resize();
+                    }, 250);
+                });
+                
+                // Visibility change
+                document.addEventListener('visibilitychange', () => {
+                    this.isActive = !document.hidden;
+                    if (this.isActive) {
+                        this.lastTime = performance.now();
+                        this.animate();
+                    }
+                });
+            }
+            
+            destroy() {
+                this.isActive = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+            }
+        }
+        
+        // ===== 3D IMAGE EFFECT (RESTORED) =====
+        class Image3DEffect {
+            constructor(element) {
+                this.element = element;
+                this.isActive = !DeviceDetector.isMobile && !DeviceDetector.isLowEnd();
+                
+                if (this.isActive) {
+                    this.init();
+                }
+            }
+            
+            init() {
+                this.element.style.transformStyle = 'preserve-3d';
+                this.element.style.transition = 'transform 0.1s ease-out';
+                
+                this.element.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.element.addEventListener('mouseleave', () => this.handleMouseLeave());
+            }
+            
+            handleMouseMove(e) {
+                const rect = this.element.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * 12;
+                const rotateY = ((centerX - x) / centerX) * 12;
+                
+                this.element.style.transform = `
+                    perspective(1500px)
+                    rotateX(${rotateX}deg)
+                    rotateY(${rotateY}deg)
+                    scale(1.05)
+                    translateZ(20px)
+                `;
+                
+                const shadowX = rotateY * -1.5;
+                const shadowY = rotateX * 1.5;
+                const shadowBlur = Math.abs(rotateX) + Math.abs(rotateY);
+                
+                this.element.style.boxShadow = `
+                    ${shadowX}px ${shadowY}px ${shadowBlur * 3}px rgba(0, 255, 136, 0.4),
+                    0 25px 50px rgba(0, 0, 0, 0.5)
+                `;
+            }
+            
+            handleMouseLeave() {
+                this.element.style.transition = 'all 0.4s ease-out';
+                this.element.style.transform = 'perspective(1500px) rotateX(0) rotateY(0) scale(1) translateZ(0)';
+                this.element.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.4)';
+            }
+        }
+        
+        // ===== SMOOTH SCROLL NAVIGATION =====
+        class SmoothNavigation {
+            constructor() {
+                this.navLinks = document.querySelectorAll('.nav-link');
+                this.sections = document.querySelectorAll('.section');
+                this.currentSection = 'home';
+                
+                this.init();
+            }
+            
+            init() {
+                this.navLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const targetId = link.getAttribute('data-section');
+                        this.scrollToSection(targetId);
+                        
+                        // Close mobile menu
+                        if (DeviceDetector.isMobile || window.innerWidth <= 1024) {
+                            document.getElementById('nav-sidebar').classList.remove('mobile-open');
+                            document.getElementById('mobile-toggle').innerHTML = '<i class="fas fa-bars"></i>';
+                        }
+                    });
+                });
+                
+                // Scroll spy with Intersection Observer
+                const observerOptions = {
+                    root: null,
+                    rootMargin: '-20% 0px -70% 0px',
+                    threshold: 0
+                };
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const sectionId = entry.target.getAttribute('id');
+                            this.setActiveNav(sectionId);
+                        }
+                    });
+                }, observerOptions);
+                
+                this.sections.forEach(section => observer.observe(section));
+            }
+            
+            scrollToSection(sectionId) {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+            
+            setActiveNav(sectionId) {
+                this.navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('data-section') === sectionId) {
+                        link.classList.add('active');
+                    }
+                });
+                this.currentSection = sectionId;
+            }
+        }
+        
+        // ===== MOBILE MENU =====
+        class MobileMenu {
+            constructor() {
+                this.toggle = document.getElementById('mobile-toggle');
+                this.sidebar = document.getElementById('nav-sidebar');
+                this.isOpen = false;
+                
+                this.init();
+            }
+            
+            init() {
+                this.toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleMenu();
+                });
+                
+                // Close on outside click
+                document.addEventListener('click', (e) => {
+                    if (this.isOpen && 
+                        !this.sidebar.contains(e.target) && 
+                        !this.toggle.contains(e.target)) {
+                        this.closeMenu();
+                    }
+                });
+                
+                // Handle escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.isOpen) {
+                        this.closeMenu();
+                    }
+                });
+            }
+            
+            toggleMenu() {
+                if (this.isOpen) {
+                    this.closeMenu();
+                } else {
+                    this.openMenu();
+                }
+            }
+            
+            openMenu() {
+                this.sidebar.classList.add('mobile-open');
+                this.toggle.innerHTML = '<i class="fas fa-times"></i>';
+                this.isOpen = true;
+                document.body.style.overflow = 'hidden';
+            }
+            
+            closeMenu() {
+                this.sidebar.classList.remove('mobile-open');
+                this.toggle.innerHTML = '<i class="fas fa-bars"></i>';
+                this.isOpen = false;
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // ===== FAQ ACCORDION =====
+        class FAQAccordion {
+            constructor() {
+                this.questions = document.querySelectorAll('.faq-question');
+                this.init();
+            }
+            
+            init() {
+                this.questions.forEach(question => {
+                    question.addEventListener('click', () => {
+                        const faqIndex = question.getAttribute('data-faq');
+                        const answer = document.querySelector(`[data-answer="${faqIndex}"]`);
+                        const icon = question.querySelector('.faq-icon');
+                        const isOpen = answer.classList.contains('open');
+                        
+                        // Close all answers
+                        document.querySelectorAll('.faq-answer').forEach(ans => ans.classList.remove('open'));
+                        document.querySelectorAll('.faq-icon').forEach(ic => ic.classList.remove('rotated'));
+                        
+                        // Toggle current answer
+                        if (!isOpen) {
+                            answer.classList.add('open');
+                            icon.classList.add('rotated');
+                        }
+                    });
+                });
+            }
+        }
+        
+        // ===== SCROLL ANIMATIONS =====
+        class ScrollAnimations {
+            constructor() {
+                this.elements = document.querySelectorAll('.fade-in');
+                this.init();
+            }
+            
+            init() {
+                if ('IntersectionObserver' in window) {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach((entry, index) => {
+                            if (entry.isIntersecting) {
+                                setTimeout(() => {
+                                    entry.target.classList.add('visible');
+                                }, index * 100);
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    }, {
+                        threshold: 0.1,
+                        rootMargin: '0px 0px -50px 0px'
+                    });
+                    
+                    this.elements.forEach(el => observer.observe(el));
+                } else {
+                    // Fallback
+                    this.elements.forEach(el => el.classList.add('visible'));
+                }
+            }
+        }
+        
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Battery-Z Website Initializing...');
+            console.log('📱 Device Info:', DeviceDetector);
+            
+            try {
+                // Initialize canvas particle system
+                const canvas = document.getElementById('canvas-bg');
+                if (canvas) {
+                    window.particleSystem = new ParticleSystem(canvas);
+                    console.log('✅ Particle system initialized');
+                }
+                
+                // Initialize 3D image effect
+                const appImage = document.getElementById('app-image');
+                if (appImage) {
+                    window.image3D = new Image3DEffect(appImage);
+                    console.log('✅ 3D image effect initialized');
+                }
+                
+                // Initialize navigation
+                window.navigation = new SmoothNavigation();
+                console.log('✅ Navigation initialized');
+                
+                // Initialize mobile menu
+                window.mobileMenu = new MobileMenu();
+                console.log('✅ Mobile menu initialized');
+                
+                // Initialize FAQ
+                window.faq = new FAQAccordion();
+                console.log('✅ FAQ initialized');
+                
+                // Initialize scroll animations
+                window.scrollAnimations = new ScrollAnimations();
+                console.log('✅ Scroll animations initialized');
+                
+                console.log('🎉 Battery-Z Website Ready!');
+                
+            } catch (error) {
+                console.error('❌ Initialization error:', error);
+                document.body.classList.add('fallback-mode');
+            }
+            
+            // Performance monitoring
+            window.addEventListener('load', () => {
+                const loadTime = performance.now();
+                console.log(`⚡ Load time: ${loadTime.toFixed(2)}ms`);
+            });
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (window.particleSystem) {
+                    window.particleSystem.destroy();
+                }
+            });
+        });
+        
+        // ===== GLOBAL ERROR HANDLING =====
+        window.addEventListener('error', (event) => {
+            console.error('💥 Error:', event.error);
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('💥 Unhandled rejection:', event.reason);
+            event.preventDefault();
+        });
+    </script>
+</body>
+</html>
