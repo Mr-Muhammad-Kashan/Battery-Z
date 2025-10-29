@@ -7,6 +7,32 @@
 Battery-Z is an open-source, cross-platform battery monitoring and optimization tool designed to empower users with deep insights into their laptop’s battery health and performance. Crafted with ❤️ by [Muhammad Kashan Tariq](https://github.com/Mr-Muhammad-Kashan), Battery-Z combines advanced diagnostics, intuitive visualizations, and actionable tips to extend battery life and enhance user experience. Whether you’re a casual user, a developer, or a power enthusiast, Battery-Z is your go-to solution for keeping your laptop’s battery in top shape! 🌟
 ---
 
+<div align="center">
+
+
+For the latest version, comprehensive feature details, stunning screenshots, and direct downloads, please visit our official project homepage.
+
+🚀 Head Over to the Official Website Now! 🚀
+
+<table align="center" border="0" cellpadding="15" cellspacing="0" style="border-collapse: collapse; border: none; width: 80%; background-color: #1a1a1a; border-radius: 15px;">
+<tr>
+<td align="center" style="border: none;">
+<a href="https://mr-muhammad-kashan.github.io/Battery-Z/" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #00ff00; font-size: 1.5em; font-weight: bold; display: inline-block; padding: 15px 30px; border: 2px solid #00ff00; border-radius: 10px; background-color: #2a2a2a; transition: all 0.3s ease;">
+🔗 Visit Battery-Z Official Website 🔗
+</a>
+<p style="color: #bbbbbb; margin-top: 15px; font-size: 1.1em;">
+(Click Here for Downloads & Full Info)
+</p>
+</td>
+</tr>
+</table>
+
+<p style="color: #888888; font-size: 0.9em;">
+This GitHub repository primarily serves as the source code host. For the best user experience, please use the official website.
+</p>
+
+</div>
+
 ## 🚀 Features
 
 Battery-Z offers a robust suite of features to monitor, analyze, and optimize your laptop’s battery:
