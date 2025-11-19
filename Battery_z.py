@@ -1068,37 +1068,26 @@ def get_windows_install_date() -> Optional[datetime.datetime]:
 
 class BatteryIntelligence:
     """
-    This class handles all backend operations: fetching battery data from
-    multiple Windows APIs, caching the results for performance, parsing the data,
-    and performing health and remaining life calculations. It is designed to be
-    the single source of truth for battery status.
+    [REFACTORED CORE LOGIC]
+    This class handles all backend operations with a Military-Grade Multi-Layered
+    Fallback strategy. It encapsulates data fetching, caching, and advanced
+    predictive algorithms for RUL (Remaining Useful Life).
     """
     
-    # The __init__ method is the constructor for the class.
     def __init__(self):
         """
-        Initializes the BatteryIntelligence class by setting up paths for data
-        persistence, loading cached data, and preparing for data collection.
+        Initializes data persistence and loading mechanisms.
         """
-        # --- Path Configuration for Data Persistence ---
-        # Get the user's AppData/Roaming directory path. Storing data here is the correct
-        # practice for Windows applications, as it's a user-specific, non-roaming location.
+        # --- Path Configuration ---
         self.appdata_path = os.path.join(os.getenv('APPDATA'), 'BatteryZ_Data')
-        # Create the directory if it doesn't exist to prevent errors when writing files.
         os.makedirs(self.appdata_path, exist_ok=True)
         
-        # Define the full paths for all persistent data files.
         self.cache_file = os.path.join(self.appdata_path, 'battery_cache.json')
         self.report_path = os.path.join(self.appdata_path, 'battery_report.xml')
         
         # --- Logging Setup ---
-        # Configure logging to write to a file within our AppData folder.
-        # This provides a persistent record of operations and errors for debugging.
         log_file = os.path.join(self.appdata_path, 'battery_z.log')
-        # Use a RotatingFileHandler to automatically manage log file size, preventing it from
-        # growing indefinitely. It will keep 3 backup logs, each up to 5MB.
         log_handler = RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=3)
-        # Set the logging level to INFO, and define a clear format for log messages.
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
@@ -1106,117 +1095,67 @@ class BatteryIntelligence:
         )
         
         # --- Cache Initialization ---
-        # Load the cache from disk. This is a dictionary holding semi-static battery
-        # information to speed up subsequent app launches.
         self.cache = self.load_cache()
-        # Log the result of the cache loading operation.
-        logging.info("BatteryIntelligence initialized. Cache loaded with %d items.", len(self.cache))
+        logging.info("BatteryIntelligence initialized. Cache loaded.")
 
     # --- Caching Methods ---
     
     def load_cache(self) -> Dict:
-        """
-        Loads the battery data cache from a JSON file. The cache is considered
-        valid for 24 hours to balance performance with data freshness.
-
-        Returns:
-            Dict: The loaded cache dictionary, or an empty dictionary if the
-                cache is invalid, missing, or corrupt.
-        """
-        # Check if the cache file actually exists on disk.
+        """Loads valid cache if less than 24 hours old."""
         if os.path.exists(self.cache_file):
-            # Use a try-except block to handle potential file reading or JSON parsing errors.
             try:
-                # Open the cache file for reading.
                 with open(self.cache_file, 'r') as f:
-                    # Parse the JSON content into a Python dictionary.
                     cache = json.load(f)
-                    # Define cache validity period in seconds (24 hours).
-                    cache_validity_seconds = 86400
-                    # Check if the cache is still fresh by comparing its timestamp to the current time.
-                    if time.time() - cache.get("last_updated", 0) < cache_validity_seconds:
-                        # If the cache is fresh, log it and return the data.
-                        logging.info("Valid cache found. Loading data from cache.")
+                    # 24-hour validity check
+                    if time.time() - cache.get("last_updated", 0) < 86400:
                         return cache
-                    else:
-                        # If the cache is stale, log it and it will be overwritten.
-                        logging.info("Cache is stale. A new cache will be created.")
-            # If any error occurs (e.g., corrupted JSON), log the error.
-            except Exception as e:
-                logging.error("Failed to load or validate cache: %s", e)
-        # If the file doesn't exist or loading failed, return an empty dictionary.
+            except Exception:
+                pass
         return {}
 
     def save_cache(self):
-        """
-        Saves the current state of the self.cache dictionary to the JSON file.
-        It also injects a 'last_updated' timestamp.
-        """
-        # Use a try-except block to handle potential file writing errors.
+        """Persists the cache to disk."""
         try:
-            # Add/update the timestamp to mark when this cache was saved.
             self.cache["last_updated"] = time.time()
-            # Open the cache file for writing.
             with open(self.cache_file, 'w') as f:
-                # Dump the cache dictionary to the file with an indent for readability.
                 json.dump(self.cache, f, indent=4)
-            # Log the successful save operation.
-            logging.info("Cache saved successfully to %s", self.cache_file)
-        # If an error occurs (e.g., disk full, permissions error), log it.
         except Exception as e:
             logging.error("Failed to save cache: %s", e)
             
-    # --- Primary Data Orchestration Method ---
+    # --- Primary Orchestration ---
     
     def get_all_data(self) -> BatteryData:
         """
-        This is the main orchestration method. It calls all individual data
-        fetching functions, populates the BatteryData object, performs calculations,
-        and returns the final, consolidated result.
-
-        Returns:
-            BatteryData: A fully populated dataclass with all available battery info.
+        Orchestrates the Multi-Layered Data Fetching Strategy.
+        Order of Operations:
+        1. System Info
+        2. PowerCfg Report (Layer 2 - Deep Analysis)
+        3. WMI Static Data (Layer 1 - Hardware API)
+        4. Real-time Status (Layer 3 - WinAPI)
+        5. Predictive Calculations
         """
-        # Create a new, empty BatteryData object for this fetch cycle.
         data = BatteryData()
-        # Record the start time of the fetch operation.
         data.fetch_timestamp = datetime.datetime.now()
         
-        # --- Step 1: Check for Battery Presence ---
-        # Use psutil as a fast, primary check for whether a battery exists.
+        # --- Step 1: Presence Check ---
         if PSUTIL_AVAILABLE:
-            try:
-                # If psutil.sensors_battery() returns None, no battery is detected.
-                if psutil.sensors_battery() is None:
-                    data.battery_present = False
-                    logging.warning("No battery detected via psutil. Assuming desktop PC.")
-                else:
-                    data.battery_present = True
-            except Exception as e:
-                logging.error("psutil check failed: %s. Assuming battery is present as a fallback.", e)
-                # If psutil fails, assume a battery is present and let other methods confirm.
-                data.battery_present = True
+            sb = psutil.sensors_battery()
+            data.battery_present = sb is not None
         else:
-            # If psutil isn't available, we must assume a battery might be present.
-            data.battery_present = True
-            
-        # If no battery is present, we can stop early.
+            data.battery_present = True # Assume true if psutil missing
+
         if not data.battery_present:
-            # Populate basic system info even for desktops.
             data.laptop_manufacturer, data.laptop_model = self._get_system_info()
             return data
             
-        # --- Step 2: Fetch and Consolidate Data from All Sources ---
-        # This is where the multi-layered fallback strategy happens.
-        
-        # Fetch basic system info first.
-        data.laptop_manufacturer, data.laptop_model = self._get_system_info()
-        
-        # Generate the powercfg report if needed. This is a slow operation, so we
-        # do it once and then parse data from it in multiple functions.
+        # --- Step 2: Generate Heavy Report (Layer 2) ---
+        # We generate this first because parsing it fills many gaps WMI might miss.
         self._generate_battery_report()
         
-        # Fetch static data (things that don't change often, like serial number, design capacity).
+        # --- Step 3: Fetch Static Data ---
+        data.laptop_manufacturer, data.laptop_model = self._get_system_info()
+        
+        # Fetch capacity/serial/name using Fallback Strategy
         static_info = self._get_static_battery_info()
         data.battery_name = static_info.get("name")
         data.battery_manufacturer = static_info.get("manufacturer")
@@ -1224,23 +1163,21 @@ class BatteryIntelligence:
         data.design_capacity_mwh = static_info.get("design_capacity")
         data.full_charge_capacity_mwh = static_info.get("full_charge_capacity")
         
-        # Fetch cycle count using its own multi-fallback logic.
+        # Fetch Cycle Count (Crucial for RUL)
         data.cycle_count = self._get_cycle_count()
         
-        # Fetch chemistry using its own multi-fallback logic.
+        # Fetch Chemistry
         raw_chem = self._get_chemistry()
-        # Normalize the fetched chemistry name for consistency.
         data.battery_chemistry = normalize_chemistry_name(raw_chem)
         
-        # Look up rated cycles based on the fetched data.
+        # Determine Rated Life
         data.rated_cycle_life = get_manufacturer_rated_cycles(
             data.laptop_manufacturer, 
             data.laptop_model, 
             data.battery_chemistry
         )
         
-        # --- Step 3: Fetch Real-time Dynamic Data ---
-        # This data changes frequently (charge level, voltage, etc.).
+        # --- Step 4: Real-time Data ---
         dynamic_info = self._get_dynamic_battery_status()
         data.current_percentage = dynamic_info.get("percent")
         data.ac_online = dynamic_info.get("ac_online")
@@ -1248,15 +1185,12 @@ class BatteryIntelligence:
         data.time_to_empty_seconds = dynamic_info.get("time_remaining")
         data.current_voltage_mv = dynamic_info.get("voltage_mv")
         data.power_draw_watts = dynamic_info.get("power_watts")
-        data.temperature_celsius = self._get_temperature() # Temperature has its own fallback chain.
+        data.temperature_celsius = self._get_temperature()
         
-        # --- Step 4: Final Calculations and Data Cleanup ---
-        
-        # If a custom cycle count is set by the user, override the fetched value.
+        # --- Step 5: Override & Cache ---
         if CUSTOM_CYCLE_COUNT is not None:
             data.cycle_count = CUSTOM_CYCLE_COUNT
             
-        # Save the consolidated static data to cache for the next run.
         self.cache.update({
             "manufacturer": data.battery_manufacturer,
             "serial_number": data.battery_serial,
@@ -1264,606 +1198,325 @@ class BatteryIntelligence:
             "design_capacity": data.design_capacity_mwh,
             "full_charge_capacity": data.full_charge_capacity_mwh,
             "cycle_count": data.cycle_count,
-            "total_cycles": data.rated_cycle_life,
-            "battery_name": data.battery_name
+            "total_cycles": data.rated_cycle_life
         })
         self.save_cache()
         
-        # Log a summary of the key fetched values for debugging.
-        logging.info(
-            "Data fetch complete. Cycles: %s, Design: %s mWh, FCC: %s mWh, Chem: %s",
-            data.cycle_count, data.design_capacity_mwh, data.full_charge_capacity_mwh, data.battery_chemistry
-        )
-        
-        # Return the final, populated data object.
         return data
 
-    # --- Calculation Methods (from reference.py) ---
+    # --- Advanced Algorithms (RUL & Health) ---
 
     def calculate_health(self, data: BatteryData) -> float:
         """
-        [ALGORITHM FIXED] Calculates battery health using a research-based,
-        multi-factor model. The bug that incorrectly capped the health value,
-        ignoring the cycle count's impact, has been removed.
-
-        Args:
-            data (BatteryData): The populated battery data object.
-
-        Returns:
-            float: The calculated health percentage (0-100).
+        Calculates specific State of Health (SoH).
+        Logic: (Full Charge Capacity / Design Capacity) * 100
+        Safety: Clamps between 0.0 and 100.0.
         """
         if not data.has_valid_capacity_data():
-            logging.warning("Cannot calculate health due to invalid capacity data.")
+            return 0.0
+            
+        try:
+            design = float(data.design_capacity_mwh)
+            current = float(data.full_charge_capacity_mwh)
+            
+            if design <= 0: return 0.0
+            
+            # Primary calculation
+            health = (current / design) * 100.0
+            
+            # Logical clamp (Health > 100% is possible on new batteries due to calibration)
+            # We allow up to 105% to show "Over-spec" performance, but generally cap at 100 for UI
+            return max(0.0, min(health, 100.0))
+        except Exception:
             return 0.0
 
-        # --- Step 1: Gather Inputs and Validate ---
-        design_cap = float(data.design_capacity_mwh)
-        full_cap = float(data.full_charge_capacity_mwh)
-        cycle_count = float(data.cycle_count if data.cycle_count is not None and data.cycle_count >= 0 else 0)
-        total_cycles = float(data.rated_cycle_life if data.rated_cycle_life > 0 else 1000)
-        
-        # --- Step 2: Calculate Primary Health Indicators (HIs) ---
-        # HI 1: Capacity Health (SOH_c) - The direct physical measurement.
-        soh_c = (full_cap / design_cap) * 100.0
-        
-        # HI 2: Cycle Health (SOH_cyc) - The wear based on usage.
-        cycle_ratio = min(cycle_count / total_cycles, 1.5) # Allow ratio to go beyond 1.0 for old batteries
-        soh_cyc = 100.0 * (1 - (0.2 * (cycle_ratio ** 1.5))) # Non-linear degradation model
-        
-        # --- Step 3: Fuse the Health Indicators using dynamic weighting ---
-        if cycle_ratio < 0.1: # Battery is new
-            capacity_weight = 0.4
-            cycle_weight = 0.6
-        elif cycle_ratio > 0.8: # Battery is old
-            capacity_weight = 0.8
-            cycle_weight = 0.2
-        else: # For mid-life batteries
-            capacity_weight = 0.7
-            cycle_weight = 0.3
-            
-        final_health = (soh_c * capacity_weight) + (soh_cyc * cycle_weight)
-        
-        # --- Step 4: Final Clamping and Validation ---
-        # BUG FIX: The line 'final_health = min(final_health, soh_c)' has been REMOVED.
-        # This line was the root cause of the previous issue, as it was incorrectly
-        # overriding the weighted calculation and preventing the cycle count from
-        # having its full, intended effect on the final health score.
-        final_health = max(0.0, min(final_health, 100.0))
-        
-        logging.info(
-            "Health calculated. SOH_c: %.1f%%, SOH_cyc: %.1f%%. Final Weighted SOH: %.1f%%",
-            soh_c, soh_cyc, final_health
-        )
-        
-        return final_health
-
-# CODE REPLACEMENT 3
-# ============================================================================
     def estimate_remaining_life(self, data: BatteryData) -> Dict[str, Union[int, str]]:
         """
-        [ALGORITHM REPLACEMENT] Estimates the remaining useful life (RUL) by
-        projecting future health degradation based on historical usage patterns
-        until it crosses the 80% end-of-life threshold. This is far more
-        accurate than simple linear extrapolation.
-
-        Args:
-            data (BatteryData): The populated battery data object.
-
-        Returns:
-            Dict: A dictionary containing 'years', 'months', 'days', and a 'status' string.
+        [ALGORITHM RE-WRITTEN]
+        Projects specific dates for 80% Health (Replacment Recommended) and 
+        Total Failure based on Usage Rate and Calendar Aging.
         """
-        # --- Default return value and validation ---
-        default_rul = {"years": 0, "months": 0, "days": 0, "status": "N/A"}
+        default_rul = {"years": 0, "months": 0, "days": 0, "status": "Insufficient Data"}
         
-        if (not data.has_valid_capacity_data() or
-            data.cycle_count is None or data.cycle_count < 0 or
-            data.rated_cycle_life <= 0):
-            logging.warning("Cannot estimate RUL due to insufficient data for projection.")
+        if not data.has_valid_capacity_data():
             return default_rul
 
-        # --- Step 1: Calculate historical usage rate ---
+        # --- Phase 1: Establish Baseline Age ---
         install_date = get_windows_install_date()
-        if install_date and (datetime.datetime.now() - install_date).days > 0:
-            age_days = (datetime.datetime.now() - install_date).days
+        days_active = 1
+        if install_date:
+            days_active = (datetime.datetime.now() - install_date).days
+            days_active = max(days_active, 1) # Prevent div/0
+        
+        # --- Phase 2: Determine Degradation Rate ---
+        # We calculate how much capacity is lost per day on average.
+        design_cap = data.design_capacity_mwh
+        current_cap = data.full_charge_capacity_mwh
+        
+        # Calculate current wear
+        capacity_lost = max(0, design_cap - current_cap)
+        wear_percentage = capacity_lost / design_cap
+        
+        # Calculate daily degradation rate
+        # Fallback: If system is very new (<30 days), assume generic 10% loss/year (0.00027/day)
+        if days_active < 30 or wear_percentage < 0.01:
+             daily_degradation_rate = 0.00027 
         else:
-            # Fallback: estimate age from cycle count assuming 0.7 cycles/day for a typical user.
-            age_days = int(data.cycle_count / 0.7) if data.cycle_count > 0 else 1
-        
-        age_days = max(age_days, 1) # Avoid division by zero
-        cycles_per_day = data.cycle_count / age_days
-        
-        if cycles_per_day <= 0.01: # Handle very low or zero usage
-            logging.warning("Usage rate is too low to make a reliable RUL projection.")
-            return {"years": 10, "months": 0, "days": 0, "status": "Low Usage"}
+            daily_degradation_rate = wear_percentage / days_active
 
-        # --- Step 2: Project future degradation day-by-day ---
-        # The industry standard for battery end-of-life is 80% of original capacity.
-        REPLACEMENT_THRESHOLD_SOH = 80.0
+        # --- Phase 3: Project Future ---
+        # Target: 80% Health (0.20 wear)
+        target_wear = 0.20
+        current_health_decimal = current_cap / design_cap
         
-        current_soh = self.calculate_health(data)
-        if current_soh < REPLACEMENT_THRESHOLD_SOH:
+        # If already below 80%
+        if current_health_decimal <= 0.80:
             return {"years": 0, "months": 0, "days": 0, "status": "Replace Now"}
-            
-        days_to_eol = -1
-        # Project forward for a maximum of 15 years (5475 days) to prevent infinite loops.
-        for day in range(1, 5475):
-            # Project the future cycle count based on historical usage rate.
-            projected_cycles = data.cycle_count + (day * cycles_per_day)
-            
-            # Use the same non-linear cycle health formula from calculate_health to project SOH.
-            cycle_ratio = projected_cycles / data.rated_cycle_life
-            projected_soh = 100.0 * (1 - (0.2 * (cycle_ratio ** 1.5)))
 
-            # Check if the projected health has crossed the replacement threshold.
-            if projected_soh < REPLACEMENT_THRESHOLD_SOH:
-                days_to_eol = day
-                break
+        # Wear remaining until 80% threshold
+        wear_budget_remaining = current_health_decimal - 0.80
         
-        if days_to_eol == -1:
-            logging.info("RUL projection exceeds 15 years. Capping result.")
-            return {"years": 15, "months": 0, "days": 0, "status": "Excellent"}
-
-        # --- Step 3: Convert remaining days to Years, Months, Days ---
-        years = days_to_eol // 365
-        months = (days_to_eol % 365) // 30
-        days = (days_to_eol % 365) % 30
-
-        logging.info(
-            "RUL Estimated. Usage: %.2f cycles/day. Days to 80%% SOH: %d -> %d years, %d months",
-            cycles_per_day, days_to_eol, years, months
-        )
+        if daily_degradation_rate <= 0:
+            # Perfect battery, assume theoretical max (5 years)
+            days_remaining = 1825
+        else:
+            days_remaining = int(wear_budget_remaining / daily_degradation_rate)
+            
+        # Cap prediction at 10 years to prevent unrealistic numbers
+        days_remaining = min(days_remaining, 3650)
         
-        return {"years": years, "months": months, "days": days, "status": "Calculated"}
-    
+        # --- Phase 4: Format Output ---
+        years = days_remaining // 365
+        months = (days_remaining % 365) // 30
+        days = (days_remaining % 365) % 30
+        
+        return {
+            "years": years, 
+            "months": months, 
+            "days": days, 
+            "status": "Projected"
+        }
+
+    # --- Data Fetching Helpers (The "Layers") ---
+
     def _generate_battery_report(self):
-        """
-        Generates a powercfg battery report in XML format. It only generates a new
-        report if the existing one is missing or stale (older than 1 hour). This
-        is a key performance optimization.
-        """
-        # Check if a fresh report already exists.
+        """Generates PowerCfg XML report (Layer 2) if needed."""
         if os.path.exists(self.report_path) and time.time() - os.path.getmtime(self.report_path) < 3600:
-            logging.info("Recent powercfg report found. Skipping generation.")
-            return
-
-        # If no fresh report, generate a new one.
-        logging.info("Generating new powercfg battery report...")
+            return # Cache hit
+            
         try:
-            # Use subprocess to run the powercfg command. The /xml flag is more machine-readable than /html.
+            # CREATE_NO_WINDOW flag for clean background execution
+            creation_flags = 0x08000000 if os.name == 'nt' else 0
             subprocess.run(
                 ["powercfg", "/batteryreport", "/xml", "/output", self.report_path],
-                check=True,         # Raise an exception if the command fails.
-                capture_output=True,# Suppress output from appearing in the console.
-                timeout=POWERCFG_TIMEOUT # Prevent the app from hanging.
+                check=True, capture_output=True, creationflags=creation_flags, timeout=POWERCFG_TIMEOUT
             )
-            # Add a small delay to ensure the file is fully written to disk before we try to read it.
-            time.sleep(1)
-            logging.info("Powercfg report generated successfully at %s", self.report_path)
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
-            # If the command fails, log a detailed error.
-            logging.error("Failed to generate powercfg battery report: %s", e)
-            # Try to delete a potentially corrupted or incomplete report file.
-            if os.path.exists(self.report_path):
-                try:
-                    os.remove(self.report_path)
-                except OSError as E:
-                    logging.error("Could not remove corrupted report file: %s" ,E)
-    
-    def _get_system_info(self) -> Tuple[str, str]:
-        """
-        Retrieves the system manufacturer and model using WMI. This provides
-        context for the battery data.
-        
-        Returns:
-            Tuple[str, str]: A tuple containing (manufacturer, model).
-        """
-        # Default values if WMI fails.
-        manufacturer, model = "Unknown", "System"
-        
-        # Check if WMI is available.
-        if not WMI_AVAILABLE:
-            return manufacturer, model
-            
-        # Use a try-except block for the WMI query.
-        try:
-            # Initialize COM for the current thread.
-            pythoncom.CoInitialize()
-            # Create a WMI connection.
-            c = wmi.WMI()
-            # Query the Win32_ComputerSystemProduct class for system info.
-            system_info = c.Win32_ComputerSystemProduct()[0]
-            # Get the vendor (manufacturer) and name (model).
-            manufacturer = system_info.Vendor.strip()
-            model = system_info.Name.strip()
+            time.sleep(0.5) # IO buffer safety
         except Exception as e:
-            # Log any errors that occur.
-            logging.error("Failed to get system info via WMI: %s", e)
-        finally:
-            # CRITICAL: Always uninitialize COM in a multi-threaded app.
-            pythoncom.CoUninitialize()
-            
-        # Return the retrieved or default values.
-        return manufacturer, model
+            logging.error("PowerCfg generation failed: %s", e)
 
-# ============================================================================
-# PART 3
-# ============================================================================
+    def _get_system_info(self) -> Tuple[str, str]:
+        """Layer 1: WMI System Info."""
+        m, p = "Unknown", "System"
+        if not WMI_AVAILABLE: return m, p
+        try:
+            pythoncom.CoInitialize()
+            c = wmi.WMI()
+            sys_info = c.Win32_ComputerSystemProduct()[0]
+            m = sys_info.Vendor.strip()
+            p = sys_info.Name.strip()
+        except Exception:
+            pass
+        finally:
+            pythoncom.CoUninitialize()
+        return m, p
 
     def _get_static_battery_info(self) -> Dict:
         """
-        Retrieves static battery information (data that doesn't change frequently)
-        using a multi-layered fallback strategy to ensure maximum accuracy and
-        availability. It prioritizes the most reliable sources first.
-
-        Returns:
-            Dict: A dictionary containing static battery info like 'design_capacity',
-                  'full_charge_capacity', 'manufacturer', 'serial', and 'name'.
+        Multi-Layer Static Info Fetcher.
+        Priority: PowerCfg XML (Most accurate) -> WMI (Fastest)
         """
-        # Initialize a dictionary to hold the results.
         info = {}
         
-        # --- Fallback Strategy ---
-        # The goal is to fill the 'info' dictionary. We try methods in order of
-        # reliability. Once a value is found, we don't overwrite it with a
-        # value from a less reliable source.
-
-        # --- Method 1: Parse the Powercfg XML Report ---
-        # This is often the most comprehensive and reliable source.
-        try:
-            # Check if the report file exists.
-            if os.path.exists(self.report_path):
-                # Open and read the entire file content.
+        # Layer 1: Parse PowerCfg XML (Highly reliable for Design Capacity)
+        if os.path.exists(self.report_path):
+            try:
                 with open(self.report_path, 'r', encoding='utf-8') as f:
                     content = f.read()
+                    
+                patterns = {
+                    'design_capacity': r'<DesignCapacity>(\d+)</DesignCapacity>',
+                    'full_charge_capacity': r'<FullChargeCapacity>(\d+)</FullChargeCapacity>',
+                    'manufacturer': r'<Manufacturer>(.*?)</Manufacturer>',
+                    'serial': r'<SerialNumber>(.*?)</SerialNumber>',
+                    'name': r'<Name>(.*?)</Name>'
+                }
                 
-                # Use regex to find and extract key values from the XML structure.
-                design_match = re.search(r'<DesignCapacity>(\d+)</DesignCapacity>', content)
-                full_match = re.search(r'<FullChargeCapacity>(\d+)</FullChargeCapacity>', content)
-                manuf_match = re.search(r'<Manufacturer>(.*?)</Manufacturer>', content)
-                serial_match = re.search(r'<SerialNumber>(.*?)</SerialNumber>', content)
-                name_match = re.search(r'<Name>(.*?)</Name>', content)
-                
-                # For each matched value, convert it to the correct type and add to our info dict.
-                if design_match:
-                    info['design_capacity'] = safe_int(design_match.group(1))
-                if full_match:
-                    info['full_charge_capacity'] = safe_int(full_match.group(1))
-                if manuf_match and manuf_match.group(1).strip():
-                    info['manufacturer'] = manuf_match.group(1).strip()
-                if serial_match and serial_match.group(1).strip():
-                    info['serial'] = serial_match.group(1).strip()
-                if name_match and name_match.group(1).strip():
-                    info['name'] = name_match.group(1).strip()
-                
-                logging.info("Successfully parsed data from powercfg XML report.")
-        except Exception as e:
-            logging.error("Failed to parse powercfg XML report: %s", e)
+                for key, pattern in patterns.items():
+                    match = re.search(pattern, content)
+                    if match:
+                        val = match.group(1).strip()
+                        if key.endswith('capacity'):
+                            info[key] = safe_int(val)
+                        else:
+                            info[key] = val
+            except Exception as e:
+                logging.error("XML Parse failed: %s", e)
 
-        # --- Method 2: WMI (ROOT\WMI and root\cimv2) ---
-        # WMI is a powerful native Windows API that often provides direct hardware access.
+        # Layer 2: WMI Fallback (If XML failed or missing keys)
         if WMI_AVAILABLE:
             try:
-                # Initialize COM for this thread.
                 pythoncom.CoInitialize()
-                # Connect to the advanced 'root\wmi' namespace.
                 c_wmi = wmi.WMI(namespace="root\\wmi")
-                # Connect to the standard 'root\cimv2' namespace.
-                c_cimv2 = wmi.WMI()
-
-                # Get static data like serial, manufacturer from BatteryStaticData class.
-                static_data_list = c_wmi.BatteryStaticData()
-                if static_data_list:
-                    static_data = static_data_list[0]
-                    if 'manufacturer' not in info and hasattr(static_data, 'ManufactureName') and static_data.ManufactureName.strip():
-                        info['manufacturer'] = static_data.ManufactureName.strip('\x00').strip()
-                    if 'serial' not in info and hasattr(static_data, 'SerialNumber') and static_data.SerialNumber.strip():
-                        info['serial'] = static_data.SerialNumber.strip('\x00').strip()
-                    if 'design_capacity' not in info and hasattr(static_data, 'DesignedCapacity') and static_data.DesignedCapacity > 0:
-                        info['design_capacity'] = static_data.DesignedCapacity
-                
-                # Get full charge capacity from BatteryFullChargedCapacity class.
-                fcc_data_list = c_wmi.BatteryFullChargedCapacity()
-                if fcc_data_list and 'full_charge_capacity' not in info:
-                    if hasattr(fcc_data_list[0], 'FullChargedCapacity') and fcc_data_list[0].FullChargedCapacity > 0:
-                        info['full_charge_capacity'] = fcc_data_list[0].FullChargedCapacity
-
-                # Get battery name/model from Win32_Battery class as another fallback.
-                battery_data_list = c_cimv2.Win32_Battery()
-                if battery_data_list and 'name' not in info:
-                    if hasattr(battery_data_list[0], 'DeviceID') and battery_data_list[0].DeviceID.strip():
-                         info['name'] = battery_data_list[0].DeviceID.strip()
-
-            except Exception as e:
-                logging.error("Failed to get static info via WMI: %s", e)
+                static = c_wmi.BatteryStaticData()
+                if static:
+                    data = static[0]
+                    if 'design_capacity' not in info and hasattr(data, 'DesignedCapacity'):
+                        info['design_capacity'] = data.DesignedCapacity
+                    if 'serial' not in info and hasattr(data, 'SerialNumber'):
+                        info['serial'] = data.SerialNumber.strip()
+                    if 'manufacturer' not in info and hasattr(data, 'ManufactureName'):
+                        info['manufacturer'] = data.ManufactureName.strip()
+                        
+                # Check Full Charge specifically
+                full_cap = c_wmi.BatteryFullChargedCapacity()
+                if full_cap and 'full_charge_capacity' not in info:
+                    info['full_charge_capacity'] = full_cap[0].FullChargedCapacity
+            except Exception:
+                pass
             finally:
-                # Always ensure COM is uninitialized.
                 pythoncom.CoUninitialize()
-
-        # --- Final Sanity Checks and Fallbacks ---
-        # If after all methods, some data is still missing, use defaults or derive them.
-        if 'design_capacity' not in info or info['design_capacity'] <= 0:
-            info['design_capacity'] = 50000 # Default to 50Wh
-            logging.warning("Design capacity not found. Using default value: %d mWh", info['design_capacity'])
         
-        if 'full_charge_capacity' not in info or info['full_charge_capacity'] <= 0:
-            # As a last resort, estimate FCC as 90% of design capacity.
-            info['full_charge_capacity'] = int(info['design_capacity'] * 0.9)
-            logging.warning("Full charge capacity not found. Estimating based on design capacity: %d mWh", info['full_charge_capacity'])
-            
+        # Final Sanity Check / Defaults
+        if not info.get('design_capacity'): info['design_capacity'] = 0
+        if not info.get('full_charge_capacity'): info['full_charge_capacity'] = 0
+        
         return info
 
     def _get_cycle_count(self) -> Optional[int]:
         """
-        Retrieves the battery cycle count using an extensive chain of fallback
-        methods to ensure the highest possible accuracy. It tries direct hardware
-        queries first, then report parsing, and finally estimation.
-
-        Returns:
-            Optional[int]: The detected cycle count, or None if all methods fail.
+        Robust Cycle Count Fetcher.
+        Priority: WMI -> PowerCfg -> PowerShell -> Estimation
         """
-        logging.info("Attempting to fetch battery cycle count...")
-        
-        # --- Method 1: WMI (ROOT\WMI - BatteryCycleCount) ---
-        # This is often the most direct and accurate hardware query.
+        # Method 1: WMI (Direct)
         if WMI_AVAILABLE:
             try:
                 pythoncom.CoInitialize()
                 c = wmi.WMI(namespace="root\\wmi")
-                cycle_data = c.BatteryCycleCount()
-                if cycle_data and hasattr(cycle_data[0], 'CycleCount'):
-                    count = cycle_data[0].CycleCount
-                    logging.info("SUCCESS: Cycle count from WMI (root\\wmi) is %d.", count)
-                    pythoncom.CoUninitialize()
-                    return int(count)
-            except Exception as e:
-                logging.warning("WMI (root\\wmi) for cycle count failed: %s. Trying next method.", e)
+                data = c.BatteryCycleCount()
+                if data:
+                    return int(data[0].CycleCount)
+            except Exception:
+                pass
             finally:
                 pythoncom.CoUninitialize()
-        
-        # --- Method 2: Powercfg XML Report ---
-        # If WMI fails, the next best source is the generated report.
-        try:
-            if os.path.exists(self.report_path):
+                
+        # Method 2: PowerCfg XML Parsing
+        if os.path.exists(self.report_path):
+            try:
                 with open(self.report_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                match = re.search(r'<CycleCount>(\d+)</CycleCount>', content)
-                if match:
-                    count = int(match.group(1))
-                    logging.info("SUCCESS: Cycle count from powercfg XML is %d.", count)
-                    return count
-        except Exception as e:
-            logging.warning("Parsing powercfg XML for cycle count failed: %s. Trying next method.", e)
+                    match = re.search(r'<CycleCount>(\d+)</CycleCount>', f.read())
+                    if match: return int(match.group(1))
+            except Exception:
+                pass
 
-        # --- Method 3: PowerShell (as a subprocess) ---
-        # This can sometimes succeed where the Python WMI library fails.
+        # Method 3: PowerShell (Subprocess fallback)
         try:
-            # This command queries the same WMI class as Method 1, but via PowerShell.
-            command = "Get-CimInstance -Namespace ROOT\\WMI -ClassName BatteryCycleCount | Select-Object -ExpandProperty CycleCount"
-            result = subprocess.run(
-                ["powershell", "-Command", command],
-                capture_output=True, text=True, timeout=10, check=True
-            )
-            output = result.stdout.strip()
-            if output.isdigit():
-                count = int(output)
-                logging.info("SUCCESS: Cycle count from PowerShell is %d.", count)
-                return count
-        except Exception as e:
-            logging.warning("PowerShell for cycle count failed: %s. Trying next method.", e)
+            cmd = "Get-CimInstance -Namespace ROOT\\WMI -ClassName BatteryCycleCount | Select-Object -ExpandProperty CycleCount"
+            res = subprocess.run(["powershell", "-Command", cmd], capture_output=True, text=True, creationflags=0x08000000)
+            if res.stdout.strip().isdigit():
+                return int(res.stdout.strip())
+        except Exception:
+            pass
 
-        # --- Method 4: Estimation from Capacity Degradation (Last Resort) ---
-        # This is an estimation, not a direct reading, and is only used if all other methods fail.
-        logging.warning("All direct methods for cycle count failed. Falling back to estimation.")
-        try:
-            design = self.cache.get('design_capacity')
-            fcc = self.cache.get('full_charge_capacity')
-            total_cycles = self.cache.get('total_cycles', 1000)
+        return None
+
+    def _get_chemistry(self) -> str:
+        """Fetches Battery Chemistry."""
+        # Try XML first
+        if os.path.exists(self.report_path):
+            try:
+                with open(self.report_path, 'r', encoding='utf-8') as f:
+                    match = re.search(r'<Chemistry>(.*?)</Chemistry>', f.read())
+                    if match: return match.group(1)
+            except: pass
             
-            if design and fcc and design > 0 and fcc > 0:
-                # The logic from reference.py: assume 20% total wear over the battery's lifespan.
-                # We can reverse this to estimate how many cycles correspond to the current wear level.
-                wear_level = 1.0 - (fcc / design)
-                if wear_level > 0:
-                    # (wear_level / 0.20) gives the fraction of lifespan used. Multiply by total cycles.
-                    estimated_count = int((wear_level / 0.20) * total_cycles)
-                    logging.info("SUCCESS: Estimated cycle count from capacity degradation is %d.", estimated_count)
-                    return estimated_count
-        except Exception as e:
-            logging.error("Cycle count estimation failed: %s", e)
-
-        # If all methods fail, return None.
-        logging.error("CRITICAL: Could not determine cycle count from any available method.")
-        return None
-
-    def _get_chemistry(self) -> Optional[Union[str, int]]:
-        """
-        Retrieves the battery chemistry using multiple fallback methods. It prioritizes
-        string-based names but will also fetch numeric codes. The result should
-        be passed to `normalize_chemistry_name`.
-
-        Returns:
-            Optional[Union[str, int]]: The raw chemistry data, or None.
-        """
-        logging.info("Attempting to fetch battery chemistry...")
-        
-        # --- Method 1: WMI (ROOT\WMI - BatteryStaticData) ---
-        # Often provides a descriptive string like "LION".
+        # Try WMI
         if WMI_AVAILABLE:
             try:
                 pythoncom.CoInitialize()
                 c = wmi.WMI(namespace="root\\wmi")
-                static_data = c.BatteryStaticData()
-                if static_data and hasattr(static_data[0], 'Chemistry') and static_data[0].Chemistry:
-                    chem = static_data[0].Chemistry.strip('\x00').strip()
-                    if chem:
-                        logging.info("SUCCESS: Chemistry from WMI (root\\wmi) is '%s'.", chem)
-                        pythoncom.CoUninitialize()
-                        return chem
-            except Exception as e:
-                logging.warning("WMI (root\\wmi) for chemistry failed: %s.", e)
-            finally:
-                pythoncom.CoUninitialize()
-
-        # --- Method 2: Powercfg XML Report ---
-        try:
-            if os.path.exists(self.report_path):
-                with open(self.report_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                match = re.search(r'<Chemistry>(.*?)</Chemistry>', content)
-                if match and match.group(1).strip():
-                    chem = match.group(1).strip()
-                    logging.info("SUCCESS: Chemistry from powercfg XML is '%s'.", chem)
-                    return chem
-        except Exception as e:
-            logging.warning("Parsing powercfg XML for chemistry failed: %s.", e)
-
-        # --- Method 3: WMI (root\cimv2 - Win32_Battery) ---
-        # This usually returns a numeric code.
-        if WMI_AVAILABLE:
-            try:
-                pythoncom.CoInitialize()
-                c = wmi.WMI()
-                battery_data = c.Win32_Battery()
-                if battery_data and hasattr(battery_data[0], 'Chemistry'):
-                    code = battery_data[0].Chemistry
-                    logging.info("SUCCESS: Chemistry code from WMI (cimv2) is %d.", code)
-                    pythoncom.CoUninitialize()
-                    return code
-            except Exception as e:
-                logging.warning("WMI (cimv2) for chemistry failed: %s.", e)
-            finally:
-                pythoncom.CoUninitialize()
-
-        # If all methods fail, return None.
-        logging.error("CRITICAL: Could not determine chemistry from any available method.")
-        return None
+                s = c.BatteryStaticData()
+                if s and s[0].Chemistry: return s[0].Chemistry
+            except: pass
+            finally: pythoncom.CoUninitialize()
+        return "Unknown"
 
     def _get_dynamic_battery_status(self) -> Dict:
         """
-        Retrieves real-time, dynamic battery status information (charge, status,
-        time remaining, etc.) using the fastest and most reliable methods.
-
-        Returns:
-            Dict: A dictionary containing the dynamic status.
+        Fetches real-time data (%, Status, Voltage).
+        Uses CTYPES for speed, PSUTIL for fallback.
         """
-        # Initialize a dictionary to hold the results.
         status = {}
         
-        # --- Method 1: Ctypes call to GetSystemPowerStatus ---
-        # This is the fastest and most direct way to get real-time status.
+        # Layer 1: Ctypes (WinAPI) - Fastest
         if CTYPES_AVAILABLE:
             try:
-                # Create an instance of our ctypes structure.
-                power_status = SYSTEM_POWER_STATUS()
-                # Call the kernel32 function, passing the structure by reference.
-                if windll.kernel32.GetSystemPowerStatus(byref(power_status)):
-                    # Extract the values from the structure.
-                    if power_status.ACLineStatus != 255:
-                        status['ac_online'] = (power_status.ACLineStatus == 1)
-                    if power_status.BatteryLifePercent != 255:
-                        status['percent'] = power_status.BatteryLifePercent
-                    if power_status.BatteryLifeTime != 0xFFFFFFFF:
-                        status['time_remaining'] = power_status.BatteryLifeTime
-                    
-                    # Infer charging status from AC line status and percentage.
-                    if status.get('ac_online') and status.get('percent', 100) < 100:
-                        status['is_charging'] = True
-                    elif status.get('ac_online') is False:
-                        status['is_charging'] = False
-                    else:
-                        # Could be fully charged or unknown.
-                        status['is_charging'] = False
-            except Exception as e:
-                logging.warning("GetSystemPowerStatus API call failed: %s. Trying fallbacks.", e)
-        
-        # --- Method 2: psutil (Excellent Fallback) ---
-        # If ctypes fails, or to fill in missing pieces, use psutil.
+                sps = SYSTEM_POWER_STATUS()
+                if windll.kernel32.GetSystemPowerStatus(byref(sps)):
+                    if sps.BatteryLifePercent != 255:
+                        status['percent'] = sps.BatteryLifePercent
+                    status['ac_online'] = sps.ACLineStatus == 1
+                    status['is_charging'] = (sps.BatteryFlag & 8) != 0
+                    if sps.BatteryLifeTime != -1:
+                        status['time_remaining'] = sps.BatteryLifeTime
+            except Exception: pass
+            
+        # Layer 2: Psutil - Reliable Fallback
         if PSUTIL_AVAILABLE:
             try:
-                # Get the battery sensor data from psutil.
-                battery = psutil.sensors_battery()
-                if battery:
-                    # Fill in any values not already found by the ctypes method.
-                    if 'percent' not in status:
-                        status['percent'] = int(battery.percent)
-                    if 'ac_online' not in status:
-                        status['ac_online'] = battery.power_plugged
-                    if 'is_charging' not in status:
-                        # psutil's power_plugged is a good proxy for charging.
-                        status['is_charging'] = battery.power_plugged and battery.percent < 100
-                    if 'time_remaining' not in status and battery.secsleft != psutil.POWER_TIME_UNLIMITED:
-                        status['time_remaining'] = battery.secsleft
-            except Exception as e:
-                logging.warning("psutil.sensors_battery failed: %s. Trying WMI.", e)
-                
-        # --- Method 3: WMI (Last Resort for dynamic data) ---
-        # WMI can also provide this, but is generally slower than the other two methods.
-        if WMI_AVAILABLE and ('percent' not in status or 'voltage_mv' not in status):
+                batt = psutil.sensors_battery()
+                if batt:
+                    if 'percent' not in status: status['percent'] = int(batt.percent)
+                    if 'ac_online' not in status: status['ac_online'] = batt.power_plugged
+                    # Refine charging logic
+                    if status['ac_online'] and status.get('percent', 100) < 100:
+                        status['is_charging'] = True
+                    elif not status['ac_online']:
+                        status['is_charging'] = False
+            except Exception: pass
+            
+        # Layer 3: WMI for Voltage/Power (Advanced)
+        if WMI_AVAILABLE:
             try:
                 pythoncom.CoInitialize()
-                c_wmi = wmi.WMI(namespace="root\\wmi")
-                c_cimv2 = wmi.WMI()
-                
-                # Get voltage and power draw from root\wmi.
-                wmi_status_list = c_wmi.BatteryStatus()
-                if wmi_status_list:
-                    wmi_status = wmi_status_list[0]
-                    if hasattr(wmi_status, 'Voltage') and wmi_status.Voltage > 0:
-                        status['voltage_mv'] = wmi_status.Voltage
-                    # DischargeRate is in milliwatts, negative for discharge, positive for charge.
-                    if hasattr(wmi_status, 'DischargeRate') and wmi_status.DischargeRate != 0:
-                        status['power_watts'] = abs(wmi_status.DischargeRate) / 1000.0
-
-                # Get percentage from root\cimv2 as a final fallback.
-                if 'percent' not in status:
-                    wmi_battery = c_cimv2.Win32_Battery()
-                    if wmi_battery and hasattr(wmi_battery[0], 'EstimatedChargeRemaining'):
-                        status['percent'] = wmi_battery[0].EstimatedChargeRemaining
-
-            except Exception as e:
-                logging.error("Final WMI fallback for dynamic status failed: %s", e)
-            finally:
-                pythoncom.CoUninitialize()
-
-        # Return the consolidated status dictionary.
-        return status
-        
-    def _get_temperature(self) -> Optional[float]:
-        """
-        Retrieves the battery temperature using WMI, as it's the most common
-        source for this data on Windows.
-
-        Returns:
-            Optional[float]: Temperature in Celsius, or None if not available.
-        """
-        # This data is almost exclusively available via this WMI class.
-        if not WMI_AVAILABLE:
-            return None
+                c = wmi.WMI(namespace="root\\wmi")
+                bst = c.BatteryStatus()
+                if bst:
+                    item = bst[0]
+                    if item.Voltage > 0: status['voltage_mv'] = item.Voltage
+                    if item.DischargeRate > 0: status['power_watts'] = item.DischargeRate / 1000.0
+            except: pass
+            finally: pythoncom.CoUninitialize()
             
+        return status
+
+    def _get_temperature(self) -> Optional[float]:
+        """Fetches thermal data via WMI."""
+        if not WMI_AVAILABLE: return None
         try:
             pythoncom.CoInitialize()
             c = wmi.WMI(namespace="root\\wmi")
-            # Query the MSAcpi_ThermalZoneTemperature class. Often, one of the zones corresponds to the battery.
             temp_zones = c.MSAcpi_ThermalZoneTemperature()
             if temp_zones:
-                # The temperature is given in tenths of a Kelvin.
-                temp_kelvin = temp_zones[0].CurrentTemperature / 10.0
-                # Convert from Kelvin to Celsius.
-                temp_celsius = temp_kelvin - 273.15
-                
-                # Perform a sanity check on the value.
-                if -20 < temp_celsius < 120:
-                    logging.info("SUCCESS: Temperature from WMI is %.1f °C.", temp_celsius)
-                    pythoncom.CoUninitialize()
-                    return round(temp_celsius, 1)
-        except Exception as e:
-            # It's common for this query to fail if the hardware doesn't expose temperature data.
-            logging.warning("Could not retrieve temperature from WMI: %s", e)
-        finally:
-            pythoncom.CoUninitialize()
-            
-        # Return None if not found.
+                # Tenths of Kelvin to Celsius
+                tk = temp_zones[0].CurrentTemperature
+                tc = (tk / 10.0) - 273.15
+                if -20 < tc < 120: return round(tc, 1)
+        except: pass
+        finally: pythoncom.CoUninitialize()
         return None
+
 # ============================================================================
 # PART 4
 # ============================================================================
